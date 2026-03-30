@@ -1,6 +1,8 @@
 export interface Player {
   id: string;
   name: string;
+  age: number;
+  gender: "male" | "female";
   runs: number;
   balls: number;
   fours: number;
@@ -20,6 +22,7 @@ export interface Team {
   players: Player[];
   status: "pending" | "approved" | "rejected";
   logo?: string;
+  year: number;
 }
 
 export interface Match {
@@ -49,10 +52,12 @@ export interface BallEvent {
   bowler: string;
 }
 
-const makePlayers = (names: string[]): Player[] =>
-  names.map((name, i) => ({
+const makePlayers = (entries: { name: string; age: number; gender: "male" | "female" }[]): Player[] =>
+  entries.map((e, i) => ({
     id: `p${i}`,
-    name,
+    name: e.name,
+    age: e.age,
+    gender: e.gender,
     runs: Math.floor(Math.random() * 45),
     balls: Math.floor(Math.random() * 30) + 5,
     fours: Math.floor(Math.random() * 5),
@@ -65,35 +70,146 @@ const makePlayers = (names: string[]): Player[] =>
   }));
 
 export const teams: Team[] = [
+  // 2026 teams
   {
-    id: "t1", name: "Thunder Strikers", captain: "Raj Patel", phone: "9876543210",
-    players: makePlayers(["Raj Patel", "Kiran Shah", "Dev Mehta", "Nikhil Joshi", "Arjun Desai", "Sagar Lohana"]),
+    id: "t1", name: "Thunder Strikers", captain: "Raj Patel", phone: "9876543210", year: 2026,
+    players: makePlayers([
+      { name: "Raj Patel", age: 28, gender: "male" },
+      { name: "Kiran Shah", age: 14, gender: "male" },
+      { name: "Dev Mehta", age: 32, gender: "male" },
+      { name: "Nikhil Joshi", age: 13, gender: "male" },
+      { name: "Arjun Desai", age: 22, gender: "male" },
+      { name: "Sagar Lohana", age: 19, gender: "male" },
+      { name: "Priya Patel", age: 24, gender: "female" },
+      { name: "Meera Shah", age: 12, gender: "female" },
+    ]),
     status: "approved",
   },
   {
-    id: "t2", name: "Royal Warriors", captain: "Amit Thakkar", phone: "9876543211",
-    players: makePlayers(["Amit Thakkar", "Vishal Parmar", "Rohit Gajjar", "Sunil Rana", "Jay Solanki", "Kunal Mehta"]),
+    id: "t2", name: "Royal Warriors", captain: "Amit Thakkar", phone: "9876543211", year: 2026,
+    players: makePlayers([
+      { name: "Amit Thakkar", age: 30, gender: "male" },
+      { name: "Vishal Parmar", age: 14, gender: "male" },
+      { name: "Rohit Gajjar", age: 25, gender: "male" },
+      { name: "Sunil Rana", age: 11, gender: "male" },
+      { name: "Jay Solanki", age: 18, gender: "male" },
+      { name: "Kunal Mehta", age: 27, gender: "male" },
+      { name: "Anjali Rana", age: 21, gender: "female" },
+    ]),
     status: "approved",
   },
   {
-    id: "t3", name: "Storm Blazers", captain: "Harsh Trivedi", phone: "9876543212",
-    players: makePlayers(["Harsh Trivedi", "Manthan Dave", "Bhavin Shah", "Chirag Patel", "Yash Modi", "Ravi Kumar"]),
+    id: "t3", name: "Storm Blazers", captain: "Harsh Trivedi", phone: "9876543212", year: 2026,
+    players: makePlayers([
+      { name: "Harsh Trivedi", age: 29, gender: "male" },
+      { name: "Manthan Dave", age: 13, gender: "male" },
+      { name: "Bhavin Shah", age: 35, gender: "male" },
+      { name: "Chirag Patel", age: 22, gender: "male" },
+      { name: "Yash Modi", age: 15, gender: "male" },
+      { name: "Ravi Kumar", age: 20, gender: "male" },
+      { name: "Sneha Trivedi", age: 19, gender: "female" },
+      { name: "Pooja Dave", age: 14, gender: "female" },
+    ]),
     status: "approved",
   },
   {
-    id: "t4", name: "Eagle XI", captain: "Pritesh Lohana", phone: "9876543213",
-    players: makePlayers(["Pritesh Lohana", "Gaurav Sindhi", "Mahesh Bhai", "Nilesh Vora", "Tushar Kothari", "Ramesh Jain"]),
+    id: "t4", name: "Eagle XI", captain: "Pritesh Lohana", phone: "9876543213", year: 2026,
+    players: makePlayers([
+      { name: "Pritesh Lohana", age: 26, gender: "male" },
+      { name: "Gaurav Sindhi", age: 12, gender: "male" },
+      { name: "Mahesh Bhai", age: 40, gender: "male" },
+      { name: "Nilesh Vora", age: 16, gender: "male" },
+      { name: "Tushar Kothari", age: 14, gender: "male" },
+      { name: "Ramesh Jain", age: 33, gender: "male" },
+      { name: "Kavita Lohana", age: 28, gender: "female" },
+    ]),
     status: "pending",
   },
   {
-    id: "t5", name: "Fire Hawks", captain: "Deepak Nagrani", phone: "9876543214",
-    players: makePlayers(["Deepak Nagrani", "Suresh Advani", "Mohan Lalwani", "Sanjay Murjani", "Vinod Chhabria", "Anil Bijlani"]),
+    id: "t5", name: "Fire Hawks", captain: "Deepak Nagrani", phone: "9876543214", year: 2026,
+    players: makePlayers([
+      { name: "Deepak Nagrani", age: 31, gender: "male" },
+      { name: "Suresh Advani", age: 15, gender: "male" },
+      { name: "Mohan Lalwani", age: 24, gender: "male" },
+      { name: "Sanjay Murjani", age: 13, gender: "male" },
+      { name: "Vinod Chhabria", age: 27, gender: "male" },
+      { name: "Anil Bijlani", age: 20, gender: "male" },
+      { name: "Rekha Nagrani", age: 22, gender: "female" },
+      { name: "Nisha Advani", age: 14, gender: "female" },
+    ]),
     status: "approved",
   },
   {
-    id: "t6", name: "Night Riders", captain: "Kamal Vaswani", phone: "9876543215",
-    players: makePlayers(["Kamal Vaswani", "Prakash Dhanani", "Naresh Thadani", "Ashok Mansukhani", "Jatin Kukreja", "Hemant Chawla"]),
+    id: "t6", name: "Night Riders", captain: "Kamal Vaswani", phone: "9876543215", year: 2026,
+    players: makePlayers([
+      { name: "Kamal Vaswani", age: 34, gender: "male" },
+      { name: "Prakash Dhanani", age: 11, gender: "male" },
+      { name: "Naresh Thadani", age: 28, gender: "male" },
+      { name: "Ashok Mansukhani", age: 19, gender: "male" },
+      { name: "Jatin Kukreja", age: 23, gender: "male" },
+      { name: "Hemant Chawla", age: 17, gender: "male" },
+      { name: "Sonal Vaswani", age: 25, gender: "female" },
+    ]),
     status: "pending",
+  },
+  // 2025 teams
+  {
+    id: "t7", name: "Rising Stars", captain: "Vikram Lohana", phone: "9876543220", year: 2025,
+    players: makePlayers([
+      { name: "Vikram Lohana", age: 27, gender: "male" },
+      { name: "Akash Sindhi", age: 14, gender: "male" },
+      { name: "Rahul Keswani", age: 30, gender: "male" },
+      { name: "Prem Lalwani", age: 12, gender: "male" },
+      { name: "Divya Lohana", age: 20, gender: "female" },
+      { name: "Rina Keswani", age: 18, gender: "female" },
+    ]),
+    status: "approved",
+  },
+  {
+    id: "t8", name: "Super Kings", captain: "Govind Mirpuri", phone: "9876543221", year: 2025,
+    players: makePlayers([
+      { name: "Govind Mirpuri", age: 33, gender: "male" },
+      { name: "Tarun Bhagnani", age: 13, gender: "male" },
+      { name: "Arun Wadhwa", age: 29, gender: "male" },
+      { name: "Lalit Chandiramani", age: 15, gender: "male" },
+      { name: "Manisha Mirpuri", age: 26, gender: "female" },
+    ]),
+    status: "approved",
+  },
+  {
+    id: "t9", name: "Blazing Bolts", captain: "Sunil Ramchandani", phone: "9876543222", year: 2025,
+    players: makePlayers([
+      { name: "Sunil Ramchandani", age: 25, gender: "male" },
+      { name: "Karan Jagtiani", age: 11, gender: "male" },
+      { name: "Vijay Gidwani", age: 35, gender: "male" },
+      { name: "Neeraj Thadani", age: 14, gender: "male" },
+      { name: "Geeta Ramchandani", age: 23, gender: "female" },
+      { name: "Komal Jagtiani", age: 13, gender: "female" },
+    ]),
+    status: "approved",
+  },
+  // 2024 teams
+  {
+    id: "t10", name: "Cricket Lions", captain: "Deepesh Vaswani", phone: "9876543230", year: 2024,
+    players: makePlayers([
+      { name: "Deepesh Vaswani", age: 29, gender: "male" },
+      { name: "Sumit Chhabria", age: 14, gender: "male" },
+      { name: "Rajiv Nagrani", age: 32, gender: "male" },
+      { name: "Lakshmi Vaswani", age: 21, gender: "female" },
+      { name: "Anita Chhabria", age: 15, gender: "female" },
+    ]),
+    status: "approved",
+  },
+  {
+    id: "t11", name: "Phoenix XI", captain: "Mohan Bijlani", phone: "9876543231", year: 2024,
+    players: makePlayers([
+      { name: "Mohan Bijlani", age: 36, gender: "male" },
+      { name: "Raju Lalchandani", age: 12, gender: "male" },
+      { name: "Dinesh Advani", age: 28, gender: "male" },
+      { name: "Sunita Bijlani", age: 24, gender: "female" },
+      { name: "Neeta Lalchandani", age: 13, gender: "female" },
+    ]),
+    status: "approved",
   },
 ];
 
@@ -157,3 +273,17 @@ export const topBowlers = [
   { name: "Suresh Advani", team: "Fire Hawks", wickets: 4, matches: 2, economy: 6.8 },
   { name: "Vishal Parmar", team: "Royal Warriors", wickets: 3, matches: 3, economy: 7.5 },
 ];
+
+// Tournament years
+export const tournamentYears = [2024, 2025, 2026];
+
+// Helper: get teams by year
+export const getTeamsByYear = (year: number) => teams.filter((t) => t.year === year);
+
+// Helper: demographics for a set of players
+export function getDemographics(players: { age: number; gender: "male" | "female" }[]) {
+  const childrenUnder15 = players.filter((p) => p.age < 15).length;
+  const boysOver15 = players.filter((p) => p.gender === "male" && p.age >= 15).length;
+  const ladies = players.filter((p) => p.gender === "female").length;
+  return { childrenUnder15, boysOver15, ladies, total: players.length };
+}
