@@ -75,7 +75,7 @@ export default function AdminPage() {
               <DemographicCard icon={Users} label="Total Players" value={globalDemographics.total} color="text-primary" />
               <DemographicCard icon={Baby} label="Children (Under 15)" value={globalDemographics.childrenUnder15} color="text-neon-yellow" />
               <DemographicCard icon={UserCheck} label="Boys (15+)" value={globalDemographics.boysOver15} color="text-neon-orange" />
-              <DemographicCard icon={User} label="Ladies" value={globalDemographics.ladies} color="text-pink-400" />
+              <DemographicCard icon={User} label="Ladies" value={globalDemographics.ladies} color="text-ladies" />
             </div>
           </div>
 
@@ -124,7 +124,7 @@ export default function AdminPage() {
                   <div className="hidden md:flex gap-6 text-sm">
                     <span className="text-neon-yellow font-semibold">👶 {yearDemo.childrenUnder15} Under 15</span>
                     <span className="text-neon-orange font-semibold">👦 {yearDemo.boysOver15} Boys 15+</span>
-                    <span className="text-pink-400 font-semibold">👩 {yearDemo.ladies} Ladies</span>
+                    <span className="text-ladies font-semibold">👩 {yearDemo.ladies} Ladies</span>
                   </div>
                 </button>
 
@@ -149,7 +149,7 @@ export default function AdminPage() {
                         </div>
                         <div className="rounded-lg bg-muted/50 p-2 text-center">
                           <p className="text-xs text-muted-foreground">Ladies</p>
-                          <p className="font-display text-lg font-bold text-pink-400">{yearDemo.ladies}</p>
+                          <p className="font-display text-lg font-bold text-ladies">{yearDemo.ladies}</p>
                         </div>
                       </div>
 
@@ -183,7 +183,7 @@ export default function AdminPage() {
                                 <div className="hidden md:flex gap-4 text-xs">
                                   <span className="text-neon-yellow">👶 {teamDemo.childrenUnder15}</span>
                                   <span className="text-neon-orange">👦 {teamDemo.boysOver15}</span>
-                                  <span className="text-pink-400">👩 {teamDemo.ladies}</span>
+                                  <span className="text-ladies">👩 {teamDemo.ladies}</span>
                                 </div>
                               </button>
 
@@ -208,7 +208,7 @@ export default function AdminPage() {
                                       </div>
                                       <div className="rounded bg-muted/30 p-1.5 text-center">
                                         <p className="text-[10px] text-muted-foreground">Ladies</p>
-                                        <p className="font-bold text-pink-400">{teamDemo.ladies}</p>
+                                        <p className="font-bold text-ladies">{teamDemo.ladies}</p>
                                       </div>
                                     </div>
 
@@ -245,7 +245,7 @@ export default function AdminPage() {
                                         <span className="rounded-full bg-neon-orange/10 text-neon-orange px-3 py-1 font-semibold">
                                           👦 Boys 15+: {teamDemo.boysOver15}
                                         </span>
-                                        <span className="rounded-full bg-pink-400/10 text-pink-400 px-3 py-1 font-semibold">
+                                        <span className="rounded-full bg-ladies/10 text-ladies px-3 py-1 font-semibold">
                                           👩 Ladies: {teamDemo.ladies}
                                         </span>
                                       </div>
@@ -296,7 +296,7 @@ export default function AdminPage() {
                         <td className="p-4 text-muted-foreground">{t.players.length}</td>
                         <td className="p-4 text-neon-yellow font-semibold">{demo.childrenUnder15}</td>
                         <td className="p-4 text-neon-orange font-semibold">{demo.boysOver15}</td>
-                        <td className="p-4 text-pink-400 font-semibold">{demo.ladies}</td>
+                        <td className="p-4 text-ladies font-semibold">{demo.ladies}</td>
                         <td className="p-4">
                           <span className={`text-xs font-bold px-2 py-1 rounded-full uppercase ${
                             t.status === "approved" ? "bg-primary/20 text-primary" :
@@ -389,7 +389,7 @@ function PlayerBadge({ player }: { player: Player }) {
     return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-neon-yellow/20 text-neon-yellow">👶 Under 15</span>;
   }
   if (player.gender === "female") {
-    return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-pink-400/20 text-pink-400">👩 Lady</span>;
+    return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-ladies/20 text-ladies">👩 Lady</span>;
   }
   return <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-neon-orange/20 text-neon-orange">👦 Boy 15+</span>;
 }
