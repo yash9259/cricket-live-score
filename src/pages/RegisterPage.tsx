@@ -154,6 +154,15 @@ export default function RegisterPage() {
           ))}
         </div>
 
+        <div className="mb-8 overflow-hidden rounded-xl border border-border bg-card">
+          <img
+            src="/form%20banner.jpeg"
+            alt="Registration form banner"
+            className="h-auto w-full object-cover"
+            loading="lazy"
+          />
+        </div>
+
         {/* Section 1: Rules */}
         {section === "rules" && (
           <motion.form onSubmit={handleSubmit} className="space-y-6 rounded-xl border border-border bg-card p-8">
