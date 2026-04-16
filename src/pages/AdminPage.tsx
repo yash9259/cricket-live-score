@@ -29,7 +29,7 @@ export default function AdminPage() {
       "Category",
       "Fee",
       "Status",
-      "Captain DOB",
+      "Captain Age",
       "Players",
       "Created At",
     ];
@@ -40,7 +40,13 @@ export default function AdminPage() {
     };
 
     const rows = registrations.map((row) => {
-      const players = row.players.map((p, i) => `${i + 2}. ${p.name} (${p.dob})`).join(" | ");
+      const captainAge = "captainAge" in row ? String((row as any).captainAge) : "";
+      const players = row.players
+        .map((p, i) => {
+          const ageOrDob = "age" in (p as any) ? `${(p as any).age}y` : (p as any).dob;
+          return `${i + 2}. ${p.name} (${ageOrDob})`;
+        })
+        .join(" | ");
       return [
         row.teamName,
         row.captainName,
@@ -48,14 +54,14 @@ export default function AdminPage() {
         row.categoryLabel,
         row.fee,
         "approved",
-        row.captainDob,
+        captainAge,
         players,
         new Date(row.createdAt).toLocaleString(),
       ];
     });
 
     const csv = [headers, ...rows].map((line) => line.map(escapeCsv).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;

@@ -2,23 +2,44 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export default defineSchema({
-  registrations: defineTable({
-    categoryId: v.string(),
-    categoryLabel: v.string(),
-    teamName: v.string(),
-    captainName: v.string(),
-    captainDob: v.string(),
-    phone: v.string(),
-    players: v.array(
+  registrations: defineTable(
+    v.union(
       v.object({
-        name: v.string(),
-        dob: v.string(),
+        categoryId: v.string(),
+        categoryLabel: v.string(),
+        teamName: v.string(),
+        captainName: v.string(),
+        captainAge: v.number(),
+        phone: v.string(),
+        players: v.array(
+          v.object({
+            name: v.string(),
+            age: v.number(),
+          }),
+        ),
+        fee: v.number(),
+        paymentStatus: v.union(v.literal("pending"), v.literal("paid")),
+        createdAt: v.number(),
+      }),
+      v.object({
+        categoryId: v.string(),
+        categoryLabel: v.string(),
+        teamName: v.string(),
+        captainName: v.string(),
+        captainDob: v.string(),
+        phone: v.string(),
+        players: v.array(
+          v.object({
+            name: v.string(),
+            dob: v.string(),
+          }),
+        ),
+        fee: v.number(),
+        paymentStatus: v.union(v.literal("pending"), v.literal("paid")),
+        createdAt: v.number(),
       }),
     ),
-    fee: v.number(),
-    paymentStatus: v.union(v.literal("pending"), v.literal("paid")),
-    createdAt: v.number(),
-  })
+  )
     .index("by_createdAt", ["createdAt"])
     .index("by_phone", ["phone"]),
 

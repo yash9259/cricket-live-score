@@ -7,12 +7,12 @@ export const createRegistration = mutation({
     categoryLabel: v.string(),
     teamName: v.string(),
     captainName: v.string(),
-    captainDob: v.string(),
+    captainAge: v.number(),
     phone: v.string(),
     players: v.array(
       v.object({
         name: v.string(),
-        dob: v.string(),
+        age: v.number(),
       }),
     ),
     fee: v.number(),

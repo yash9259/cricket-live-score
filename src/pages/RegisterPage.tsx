@@ -15,25 +15,15 @@ const categories = [
   { id: "kids-5-10", label: "બાળકો તથા બાલિકાઓ (5 થી 10 વર્ષ) - 01-04-2016 પછી જન્મ હોવો જોઈએ", fee: 900 },
 ];
 
-const calculateAge = (dob: string): number | null => {
-  if (!dob) return null;
-  const birthDate = new Date(dob);
-  const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const monthDiff = today.getMonth() - birthDate.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-    age--;
-  }
-  return age >= 0 ? age : null;
-};
+const ageOptions = Array.from({ length: 99 }, (_, i) => i + 1);
 
 export default function RegisterPage() {
   const [section, setSection] = useState<"rules" | "team" | "payment">("rules");
   const [teamName, setTeamName] = useState("");
   const [captain, setCaptain] = useState("");
-  const [captainDOB, setCaptainDOB] = useState("");
+  const [captainAge, setCaptainAge] = useState("");
   const [phone, setPhone] = useState("");
-  const [players, setPlayers] = useState(Array(5).fill({ name: "", dob: "" }));
+  const [players, setPlayers] = useState(Array.from({ length: 5 }, () => ({ name: "", age: "" })));
   const [selectedCategory, setSelectedCategory] = useState("");
   const [teamValidationError, setTeamValidationError] = useState("");
   const [submitError, setSubmitError] = useState("");
@@ -41,7 +31,7 @@ export default function RegisterPage() {
   const [submitted, setSubmitted] = useState(false);
   const createRegistration = useMutation(api.registrations.createRegistration);
 
-  const updatePlayer = (i: number, field: "name" | "dob", value: string) => {
+  const updatePlayer = (i: number, field: "name" | "age", value: string) => {
     const copy = [...players];
     copy[i] = { ...copy[i], [field]: value };
     setPlayers(copy);
@@ -50,23 +40,6 @@ export default function RegisterPage() {
   const selectedFee = categories.find(c => c.id === selectedCategory)?.fee || 0;
   const upiPaymentUrl = `upi://pay?pa=9033615897@upi&pn=VRP Box Cricket&am=${selectedFee}&cu=INR`;
   const qrCodeSrc = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiPaymentUrl)}`;
-
-  const getCategoryAgeRule = (categoryId: string) => {
-    if (categoryId === "youth" || categoryId === "women") return "16+ years";
-    if (categoryId === "boys-11-15" || categoryId === "girls-11-15") return "11-15 years";
-    if (categoryId === "kids-5-10") return "5-10 years";
-    return "selected category";
-  };
-
-  const isAgeAllowedForCategory = (age: number | null, categoryId: string) => {
-    if (age === null) return false;
-    if (categoryId === "youth" || categoryId === "women") return age >= 16;
-    if (categoryId === "boys-11-15" || categoryId === "girls-11-15") return age >= 11 && age <= 15;
-    if (categoryId === "kids-5-10") return age >= 5 && age <= 10;
-    return false;
-  };
-
-  const captainAge = calculateAge(captainDOB);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,15 +51,16 @@ export default function RegisterPage() {
         return;
       }
 
-      if (!isAgeAllowedForCategory(captainAge, selectedCategory)) {
-        setTeamValidationError(`Captain age must be in ${getCategoryAgeRule(selectedCategory)} for selected category.`);
+      const captainAgeNumber = Number(captainAge);
+      if (!Number.isInteger(captainAgeNumber) || captainAgeNumber < 1 || captainAgeNumber > 99) {
+        setTeamValidationError("Captain age must be between 1 and 99.");
         return;
       }
 
       for (let i = 0; i < players.length; i++) {
-        const playerAge = calculateAge(players[i].dob);
-        if (!isAgeAllowedForCategory(playerAge, selectedCategory)) {
-          setTeamValidationError(`Player ${i + 2} age must be in ${getCategoryAgeRule(selectedCategory)} for selected category.`);
+        const playerAge = Number(players[i].age);
+        if (!Number.isInteger(playerAge) || playerAge < 1 || playerAge > 99) {
+          setTeamValidationError(`Player ${i + 2} age must be between 1 and 99.`);
           return;
         }
       }
@@ -102,9 +76,12 @@ export default function RegisterPage() {
           categoryLabel: categories.find((c) => c.id === selectedCategory)?.label ?? "",
           teamName,
           captainName: captain,
-          captainDob: captainDOB,
+          captainAge: Number(captainAge),
           phone,
-          players,
+          players: players.map((player) => ({
+            name: player.name,
+            age: Number(player.age),
+          })),
           fee: selectedFee,
           createdAt: Date.now(),
         });
@@ -128,7 +105,7 @@ export default function RegisterPage() {
           <CheckCircle className="h-20 w-20 text-primary mx-auto" />
           <h2 className="font-display text-4xl font-bold text-foreground">Registration Submitted!</h2>
           <p className="text-muted-foreground">Your team <span className="text-primary font-semibold">{teamName}</span> is approved and saved.</p>
-          <Button onClick={() => { setSubmitted(false); setTeamName(""); setCaptain(""); setCaptainDOB(""); setPhone(""); setPlayers(Array(5).fill({ name: "", dob: "" })); setSelectedCategory(""); setTeamValidationError(""); setSubmitError(""); setSection("rules"); }} variant="outline" className="border-primary/30 text-primary hover:bg-primary/10">
+          <Button onClick={() => { setSubmitted(false); setTeamName(""); setCaptain(""); setCaptainAge(""); setPhone(""); setPlayers(Array.from({ length: 5 }, () => ({ name: "", age: "" }))); setSelectedCategory(""); setTeamValidationError(""); setSubmitError(""); setSection("rules"); }} variant="outline" className="border-primary/30 text-primary hover:bg-primary/10">
             Register Another Team
           </Button>
         </motion.div>
@@ -139,7 +116,7 @@ export default function RegisterPage() {
   return (
     <div className="container mx-auto px-4 py-12 max-w-4xl">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-display text-4xl font-bold text-foreground mb-2">ટુર્નામેન્ટ નોંધણી</h1>
+        <h1 className="font-display text-4xl font-bold text-foreground mb-2">Box Cricket Registration</h1>
         <p className="text-muted-foreground mb-8">VRP BOX CRICKET ટુર્નામેન્ટમાં તમારી ટીમની નોંધણી કરો</p>
 
         {/* Progress Indicator */}
@@ -167,12 +144,10 @@ export default function RegisterPage() {
         {section === "rules" && (
           <motion.form onSubmit={handleSubmit} className="space-y-6 rounded-xl border border-border bg-card p-8">
             <div>
-              <h2 className="font-display text-2xl font-bold text-foreground mb-4">કુલ નિયમો (Tournament Rules)</h2>
+              <h2 className="font-display text-2xl font-bold text-foreground mb-4">બોક્સ ક્રિકેટ ના નિયમો</h2>
               <div className="space-y-4 text-sm leading-relaxed text-muted-foreground">
-                <div className="bg-muted/30 p-4 rounded-lg border border-border">
-                  <p className="font-semibold text-foreground mb-2">⚠️ મર્યાદિત સંખ્યા માં ફોર્મ હોવા થી વહેલા અને પહેલા ફોર્મ ભરી દેવા</p>
-                  <p>આ ટુર્નામેન્ટ ફક્ત લોહાણા જ્ઞાતિ પૂરતી મર્યાદિત છે.</p>
-                </div>
+                <p className="font-semibold text-foreground">⚠️ વેહલા તે પેહલા ના ધોરણે ફોર્મ સ્વીકારવા માં આવશે ફોર્મ ભરવા ની અંતિમ તારીખ <span className="font-bold">30/04/2026</span> રહેશે, નિશ્ચિત સંખ્યા માં ફોર્મ થઇ જશે તો <span className="font-bold">30/04/2026</span> પહેલા ફોર્મ બંધ કરી દેવા માં આવશે.</p>
+                <p>આ ટુર્નામેન્ટ ફક્ત લોહાણા જ્ઞાતિ પૂરતી મર્યાદિત છે.</p>
 
                 <ul className="space-y-3 list-disc list-inside">
                   <li>આ સમગ્ર બોક્સ ક્રિકેટ ટુર્નામેન્ટ પાંચ અલગ અલગ વિભાગમાં મેચ રમાડવામાં આવશે.</li>
@@ -183,24 +158,20 @@ export default function RegisterPage() {
                   <li>જો કોઈ બોલર ફાસ્ટ બોલ નાખશે તો અમ્પાયર નોબોલ આપી શકશે.</li>
                 </ul>
 
-                <div className="bg-muted/30 p-4 rounded-lg border border-border">
-                  <p className="font-semibold text-foreground mb-2">📋 ફર્જિયાત નોંધણી અને ફી ભરણી</p>
-                  <ul className="space-y-2 list-disc list-inside">
-                    <li>એન્ટ્રી ફી ફરજિયાત ગુગલ પે (Google Pay) અથવા UPI (9033615897@upi) દ્વારા ભરવાની રહેશે.</li>
-                    <li>ફી ભર્યા બાદ તેનો સ્ક્રીનશોટ મોબાઇલ નંબર 88661 14748 (યોગેશ મીરાણી) પર ટીમ અને કેપ્ટન ના નામ સાથે Whatsapp કરવાનો રહેશે.</li>
-                    <li>માત્ર ફોર્મ ભરેલું હશે અને એન્ટ્રી ફી બાકી હશે તો તે ટીમનું નામ ડ્રોમાં નાખવામાં આવશે નહિ.</li>
-                    <li>ફોર્મ ભરવાની છેલ્લી તારીખ 31-04-2026 મંગળવાર સુધી રહેશે.</li>
-                  </ul>
-                </div>
+                <p className="font-semibold text-foreground">📋 ફર્જિયાત નોંધણી અને ફી ભરણી</p>
+                <ul className="space-y-2 list-disc list-inside">
+                  <li>એન્ટ્રી ફી ફરજિયાત ગુગલ પે (Google Pay) અથવા UPI (9033615897@upi) દ્વારા ભરવાની રહેશે.</li>
+                  <li>ફી ભર્યા બાદ તેનો સ્ક્રીનશોટ મોબાઇલ નંબર <span className="font-semibold">88661 14748 (યોગેશ મીરાણી)</span> પર ટીમ અને કેપ્ટન ના નામ સાથે Whatsapp કરવાનો રહેશે.</li>
+                  <li>માત્ર ફોર્મ ભરેલું હશે અને એન્ટ્રી ફી બાકી હશે તો તે ટીમનું નામ ડ્રોમાં નાખવામાં આવશે નહિ.</li>
+                  <li>ફોર્મ ભરવાની છેલ્લી તારીખ 31-04-2026 મંગળવાર સુધી રહેશે.</li>
+                </ul>
 
-                <div className="bg-muted/30 p-4 rounded-lg border border-border">
-                  <p className="font-semibold text-foreground mb-2">👕 ડ્રેસ કોડ અને નિર્ણય</p>
-                  <ul className="space-y-2 list-disc list-inside">
-                    <li>મેચ દરમિયાન દરેક ટીમે ફરજિયાત એક સરખા ડ્રેસ કોડમાં આવવાનું રહેશે.</li>
-                    <li>સમગ્ર ટુર્નામેન્ટમાં અમ્પાયર નો નિર્ણય આખરી નિર્ણય રહેશે જે દરેક ટીમને બંધનકર્તા રહેશે.</li>
-                    <li>આ સમગ્ર ટુર્નામેન્ટમાં ફેરફાર કરવાનો હક આયોજકનો રહેશે અને તે દરેક ટીમને બંધનકર્તા રહેશે.</li>
-                  </ul>
-                </div>
+                <p className="font-semibold text-foreground">👕 ડ્રેસ કોડ અને નિર્ણય</p>
+                <ul className="space-y-2 list-disc list-inside">
+                  <li>મેચ દરમિયાન દરેક ટીમે ફરજિયાત એક સરખા ડ્રેસ કોડમાં આવવાનું રહેશે.</li>
+                  <li>સમગ્ર ટુર્નામેન્ટમાં અમ્પાયર નો નિર્ણય આખરી નિર્ણય રહેશે જે દરેક ટીમને બંધનકર્તા રહેશે.</li>
+                  <li>આ સમગ્ર ટુર્નામેન્ટમાં ફેરફાર કરવાનો હક આયોજકનો રહેશે અને તે દરેક ટીમને બંધનકર્તા રહેશે.</li>
+                </ul>
 
                 <div className="bg-yellow-500/15 p-6 rounded-lg border-2 border-yellow-500/50 shadow-md">
                   <p className="font-semibold text-foreground mb-3">👶 નાના બાળકો અને મહિલાઓ માટે</p>
@@ -314,29 +285,21 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="captainDOB" className="font-semibold">કપ્તાનની જન્મતારીખ <span className="text-destructive">*</span> (Captain Date of Birth)</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input 
-                    id="captainDOB" 
-                    type="date" 
-                    value={captainDOB} 
-                    onChange={(e) => setCaptainDOB(e.target.value)} 
-                    required 
-                    className="bg-muted border-border" 
-                  />
-                  {captainDOB && (
-                    <div className="bg-primary/10 rounded px-3 py-2 flex items-center justify-center border border-primary/20">
-                      <span className="text-sm font-semibold text-primary">
-                        {captainAge} વર્ષ
-                      </span>
-                    </div>
-                  )}
-                </div>
-                {selectedCategory && captainDOB && !isAgeAllowedForCategory(captainAge, selectedCategory) && (
-                  <p className="text-xs text-destructive">
-                    Captain age must be in {getCategoryAgeRule(selectedCategory)}.
-                  </p>
-                )}
+                <Label htmlFor="captainAge" className="font-semibold">Captain Age <span className="text-destructive">*</span></Label>
+                <select
+                  id="captainAge"
+                  value={captainAge}
+                  onChange={(e) => setCaptainAge(e.target.value)}
+                  required
+                  className="w-full rounded-md border border-border bg-muted px-3 py-2"
+                >
+                  <option value="">ઉંમર પસંદ કરો</option>
+                  {ageOptions.map((age) => (
+                    <option key={age} value={age}>
+                      {age}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -359,29 +322,21 @@ export default function RegisterPage() {
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor={`player-dob-${i}`} className="text-xs font-semibold">જન્મતારીખ <span className="text-destructive">*</span></Label>
-                      <div className="flex gap-2">
-                        <Input 
-                          id={`player-dob-${i}`}
-                          type="date"
-                          value={player.dob}
-                          onChange={(e) => updatePlayer(i, "dob", e.target.value)}
-                          required
-                          className="bg-background border-border flex-1"
-                        />
-                        {player.dob && (
-                          <div className="bg-primary/10 rounded px-2 py-2 flex items-center justify-center border border-primary/20 min-w-fit">
-                            <span className="text-xs font-semibold text-primary">
-                              {calculateAge(player.dob)}y
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      {selectedCategory && player.dob && !isAgeAllowedForCategory(calculateAge(player.dob), selectedCategory) && (
-                        <p className="text-xs text-destructive">
-                          Player age must be in {getCategoryAgeRule(selectedCategory)}.
-                        </p>
-                      )}
+                      <Label htmlFor={`player-age-${i}`} className="text-xs font-semibold">ઉંમર <span className="text-destructive">*</span></Label>
+                      <select
+                        id={`player-age-${i}`}
+                        value={player.age}
+                        onChange={(e) => updatePlayer(i, "age", e.target.value)}
+                        required
+                        className="w-full rounded-md border border-border bg-background px-3 py-2"
+                      >
+                        <option value="">ઉંમર પસંદ કરો</option>
+                        {ageOptions.map((age) => (
+                          <option key={age} value={age}>
+                            {age}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                 </div>
