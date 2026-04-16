@@ -1,8 +1,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
+import { useQuery } from "convex/react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { api } from "../convex/_generated/api";
 import Navbar from "@/components/Navbar";
 import HomePage from "@/pages/HomePage";
 import RegisterPage from "@/pages/RegisterPage";
@@ -18,11 +20,23 @@ const queryClient = new QueryClient();
 
 function AppContent() {
   const { pathname } = useLocation();
-  const isDisplay = pathname === "/display";
+  const isDisplay = pathname.startsWith("/display");
+  const settings = useQuery(api.settings.getPublicSettings);
+  const registrationOnlyMode = settings?.registrationOnlyMode ?? false;
+
+  const isAdminArea =
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/scorer") ||
+    pathname.startsWith("/display");
+  const isRegisterArea = pathname.startsWith("/register");
+
+  if (registrationOnlyMode && !isRegisterArea && !isAdminArea) {
+    return <Navigate to="/register" replace />;
+  }
 
   return (
     <>
-      {!isDisplay && <Navbar />}
+      {!isDisplay && <Navbar registrationOnlyMode={registrationOnlyMode} />}
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/register" element={<RegisterPage />} />

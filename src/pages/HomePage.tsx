@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useQuery } from "convex/react";
 import { Trophy, Users, Zap, ChevronRight } from "lucide-react";
 import { matches, topBatsmen, topBowlers } from "@/lib/mockData";
+import { api } from "../../convex/_generated/api";
 import MatchCard from "@/components/MatchCard";
 import { Button } from "@/components/ui/button";
 
@@ -13,12 +15,25 @@ const fadeUp = {
 export default function HomePage() {
   const liveMatches = matches.filter((m) => m.status === "live");
   const recentMatches = matches.filter((m) => m.status === "completed").slice(0, 4);
+  const liveScore = useQuery(api.liveScore.getCurrent);
+  const registrationStats = useQuery(api.registrations.registrationStats);
+  const heroImage = {
+    src: "https://images.unsplash.com/photo-1593341646782-e0b495cff86d?auto=format&fit=crop&w=2000&q=80",
+    alt: "Cricket ball on green grass",
+  };
 
   return (
     <div className="min-h-screen">
       {/* Hero */}
       <section className="relative overflow-hidden border-b border-border">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-neon-orange/5" />
+        <img
+          src={heroImage.src}
+          alt={heroImage.alt}
+          className="absolute inset-0 h-full w-full object-cover"
+          loading="lazy"
+        />
+        <div className="absolute inset-0 bg-background/60" />
+        <div className="absolute inset-0 bg-gradient-to-br from-background/85 via-background/55 to-neon-orange/20" />
         <div className="container mx-auto px-4 py-20 md:py-32 relative">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
@@ -27,13 +42,14 @@ export default function HomePage() {
             className="max-w-3xl"
           >
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm text-primary mb-6">
-              <Zap className="h-4 w-4" /> Season 2026 — Live Now
+              <Zap className="h-4 w-4" />
+              {liveScore
+                ? `${liveScore.battingTeam} ${liveScore.runs}/${liveScore.wickets} (${liveScore.overs}.${liveScore.balls})`
+                : "Season 2026 — Live Now"}
             </div>
             <h1 className="font-display text-5xl md:text-7xl font-bold leading-tight text-foreground">
-              LOHANA <br />
+              VAGAD RAGHUVANSHI PARIVAR - BHUJ <br />
               <span className="text-primary neon-text-green">BOX CRICKET</span>
-              <br />
-              TOURNAMENT
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-lg">
               Experience thrilling box cricket action. Register your team, follow live scores, and compete for glory!
@@ -56,11 +72,10 @@ export default function HomePage() {
 
       {/* Sponsors */}
       <section className="border-b border-border bg-card/50 py-6">
-        <div className="container mx-auto px-4 flex flex-wrap items-center justify-center gap-8 text-muted-foreground">
-          <span className="text-xs uppercase tracking-widest">Powered By</span>
-          {["Lohana Samaj", "City Sports Club", "Digi Print Co.", "Fresh Mart"].map((s) => (
-            <span key={s} className="font-display text-sm font-semibold text-muted-foreground/70">{s}</span>
-          ))}
+        <div className="container mx-auto px-4 flex items-center justify-center text-muted-foreground">
+          <span className="font-display text-sm md:text-base font-semibold tracking-wide">
+            Powered By : vagad raghuvanshi yuva sagathn
+          </span>
         </div>
       </section>
 
@@ -163,10 +178,10 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { label: "Teams", value: "6", icon: Users, color: "text-primary" },
+              { label: "Teams", value: `${registrationStats?.total ?? 0}`, icon: Users, color: "text-primary" },
               { label: "Matches", value: "4", icon: Trophy, color: "text-neon-yellow" },
-              { label: "Runs Scored", value: "437", icon: Zap, color: "text-neon-orange" },
-              { label: "Wickets", value: "21", icon: Trophy, color: "text-destructive" },
+              { label: "Live Runs", value: `${liveScore?.runs ?? 0}`, icon: Zap, color: "text-neon-orange" },
+              { label: "Live Wkts", value: `${liveScore?.wickets ?? 0}`, icon: Trophy, color: "text-destructive" },
             ].map((s) => (
               <motion.div
                 key={s.label}
@@ -188,7 +203,7 @@ export default function HomePage() {
       <footer className="border-t border-border py-8 bg-card/50">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
           <p className="font-display text-lg mb-2">
-            LOHANA <span className="text-primary">BOX CRICKET</span> TOURNAMENT 2026
+            VAGAD RAGHUVANSHI PARIVAR - BHUJ <span className="text-primary">BOX CRICKET</span> 2026
           </p>
           <p>Organized by Lohana Samaj • All rights reserved</p>
         </div>

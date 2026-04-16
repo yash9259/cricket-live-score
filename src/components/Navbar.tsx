@@ -8,13 +8,16 @@ const navLinks = [
   { to: "/matches", label: "Matches" },
   { to: "/leaderboard", label: "Leaderboard" },
   { to: "/register", label: "Register" },
-  { to: "/admin", label: "Admin" },
-  { to: "/scorer", label: "Scorer" },
 ];
 
-export default function Navbar() {
+type NavbarProps = {
+  registrationOnlyMode?: boolean;
+};
+
+export default function Navbar({ registrationOnlyMode = false }: NavbarProps) {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
+  const activeLinks = registrationOnlyMode ? [{ to: "/register", label: "Register" }] : navLinks;
 
   return (
     <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
@@ -22,13 +25,13 @@ export default function Navbar() {
         <Link to="/" className="flex items-center gap-2">
           <Trophy className="h-7 w-7 text-primary" />
           <span className="font-display text-xl font-bold tracking-wide text-foreground">
-            LOHANA <span className="text-primary">BOX CRICKET</span>
+            VRP <span className="text-primary">BOX CRICKET</span>
           </span>
         </Link>
 
         {/* Desktop */}
         <div className="hidden md:flex items-center gap-1">
-          {navLinks.map((l) => (
+          {activeLinks.map((l) => (
             <Link
               key={l.to}
               to={l.to}
@@ -41,12 +44,6 @@ export default function Navbar() {
               {l.label}
             </Link>
           ))}
-          <Link
-            to="/display"
-            className="ml-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm font-bold hover:bg-primary/90 transition-colors"
-          >
-            📺 Live Display
-          </Link>
         </div>
 
         {/* Mobile toggle */}
@@ -65,7 +62,7 @@ export default function Navbar() {
             className="md:hidden overflow-hidden border-t border-border bg-background"
           >
             <div className="flex flex-col p-4 gap-1">
-              {[...navLinks, { to: "/display", label: "📺 Live Display" }].map((l) => (
+              {activeLinks.map((l) => (
                 <Link
                   key={l.to}
                   to={l.to}
