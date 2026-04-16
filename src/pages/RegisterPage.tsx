@@ -407,8 +407,8 @@ export default function RegisterPage() {
                   <div className="flex gap-3 items-start">
                     <AlertCircle className="h-6 w-6 text-red-600 shrink-0 mt-1 animate-pulse" />
                     <div className="flex-1">
-                      <p className="text-lg font-bold text-red-700 dark:text-red-400 mb-2">⭐ મહત્વપૂર્ણ</p>
-                      <p className="text-base font-semibold text-red-800 dark:text-red-300 leading-relaxed">
+                      <p className="text-lg font-bold text-white mb-2">⭐ મહત્વપૂર્ણ</p>
+                      <p className="text-base font-semibold text-white leading-relaxed">
                         ચલણ કર્યા પછી સ્ક્રીનશોટ <span className="font-display text-lg bg-red-600/30 px-2 py-1 rounded">88661 14748</span> (યોગેશ) પર WhatsApp કરો
                       </p>
                     </div>
