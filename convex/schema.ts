@@ -60,4 +60,14 @@ export default defineSchema({
     lastEvent: v.string(),
     updatedAt: v.number(),
   }).index("by_key", ["key"]),
+
+  adminSessions: defineTable({
+    token: v.string(),
+    email: v.string(),
+    createdAt: v.number(),
+    lastSeenAt: v.number(),
+    expiresAt: v.number(),
+  })
+    .index("by_token", ["token"])
+    .index("by_expiresAt", ["expiresAt"]),
 });

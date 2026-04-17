@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as adminAuth from "../adminAuth.js";
 import type * as liveScore from "../liveScore.js";
 import type * as registrations from "../registrations.js";
 import type * as settings from "../settings.js";
@@ -19,6 +20,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  adminAuth: typeof adminAuth;
   liveScore: typeof liveScore;
   registrations: typeof registrations;
   settings: typeof settings;

@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { requireAdminSession } from "./adminAuth";
 
 export const getPublicSettings = query({
   args: {},
@@ -24,8 +25,11 @@ export const getPublicSettings = query({
 export const setRegistrationOnlyMode = mutation({
   args: {
     enabled: v.boolean(),
+    token: v.string(),
   },
   handler: async (ctx, args) => {
+    await requireAdminSession(ctx, args.token);
+
     const existing = await ctx.db
       .query("settings")
       .withIndex("by_key", (q) => q.eq("key", "app"))

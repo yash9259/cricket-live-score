@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { requireAdminSession } from "./adminAuth";
 
 export const getCurrent = query({
   args: {},
@@ -13,6 +14,7 @@ export const getCurrent = query({
 
 export const upsert = mutation({
   args: {
+    token: v.string(),
     battingTeam: v.string(),
     bowlingTeam: v.string(),
     runs: v.number(),
@@ -22,30 +24,43 @@ export const upsert = mutation({
     lastEvent: v.string(),
   },
   handler: async (ctx, args) => {
+    await requireAdminSession(ctx, args.token);
+
     const existing = await ctx.db
       .query("liveScores")
       .withIndex("by_key", (q) => q.eq("key", "main"))
       .unique();
 
+    const patchData = {
+      battingTeam: args.battingTeam,
+      bowlingTeam: args.bowlingTeam,
+      runs: args.runs,
+      wickets: args.wickets,
+      overs: args.overs,
+      balls: args.balls,
+      lastEvent: args.lastEvent,
+      updatedAt: Date.now(),
+    };
+
     if (existing) {
-      await ctx.db.patch(existing._id, {
-        ...args,
-        updatedAt: Date.now(),
-      });
+      await ctx.db.patch(existing._id, patchData);
       return existing._id;
     }
 
     return await ctx.db.insert("liveScores", {
       key: "main",
-      ...args,
-      updatedAt: Date.now(),
+      ...patchData,
     });
   },
 });
 
 export const reset = mutation({
-  args: {},
-  handler: async (ctx) => {
+  args: {
+    token: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await requireAdminSession(ctx, args.token);
+
     const existing = await ctx.db
       .query("liveScores")
       .withIndex("by_key", (q) => q.eq("key", "main"))

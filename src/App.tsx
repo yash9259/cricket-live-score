@@ -36,7 +36,8 @@ function AppContent() {
 
   return (
     <>
-      {!isDisplay && <Navbar registrationOnlyMode={registrationOnlyMode} />}
+      {/* Show Navbar only if not in display, admin, or scorer area */}
+      {!isDisplay && !isAdminArea && <Navbar registrationOnlyMode={registrationOnlyMode} />}
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/register" element={<RegisterPage />} />

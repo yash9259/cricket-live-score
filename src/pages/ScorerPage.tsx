@@ -2,10 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
 import { RotateCcw } from "lucide-react";
+import { Navigate } from "react-router-dom";
 import { api } from "../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+const ADMIN_SESSION_STORAGE_KEY = "adminSessionToken";
 
 const defaultState = {
   battingTeam: "Team A",
@@ -18,6 +21,8 @@ const defaultState = {
 };
 
 export default function ScorerPage() {
+  const [sessionToken] = useState(() => localStorage.getItem(ADMIN_SESSION_STORAGE_KEY) ?? "");
+  const session = useQuery(api.adminAuth.validateSession, sessionToken ? { token: sessionToken } : "skip");
   const live = useQuery(api.liveScore.getCurrent);
   const upsert = useMutation(api.liveScore.upsert);
   const reset = useMutation(api.liveScore.reset);
@@ -51,7 +56,10 @@ export default function ScorerPage() {
     balls: number;
     lastEvent: string;
   }) => {
+    if (!sessionToken) return;
+
     await upsert({
+      token: sessionToken,
       battingTeam,
       bowlingTeam,
       runs: next.runs,
@@ -136,14 +144,17 @@ export default function ScorerPage() {
   };
 
   const handleReset = async () => {
+    if (!sessionToken) return;
+
     setHistory([]);
     setRuns(0);
     setWickets(0);
     setOvers(0);
     setBalls(0);
     setLastEvent("");
-    await reset();
+    await reset({ token: sessionToken });
     await upsert({
+      token: sessionToken,
       battingTeam,
       bowlingTeam,
       runs: 0,
@@ -155,7 +166,10 @@ export default function ScorerPage() {
   };
 
   const saveTeams = async () => {
+    if (!sessionToken) return;
+
     await upsert({
+      token: sessionToken,
       battingTeam,
       bowlingTeam,
       runs,
@@ -165,6 +179,18 @@ export default function ScorerPage() {
       lastEvent,
     });
   };
+
+  if (!sessionToken) {
+    return <Navigate to="/admin" replace />;
+  }
+
+  if (session === undefined) {
+    return <div className="container mx-auto px-4 py-12 text-center text-muted-foreground">Validating admin session...</div>;
+  }
+
+  if (!session.authenticated) {
+    return <Navigate to="/admin" replace />;
+  }
 
   return (
     <div className="container mx-auto max-w-3xl px-4 py-8 space-y-6">

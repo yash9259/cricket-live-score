@@ -104,8 +104,8 @@ export default function RegisterPage() {
         >
           <CheckCircle className="h-20 w-20 text-primary mx-auto" />
           <h2 className="font-display text-4xl font-bold text-foreground">Registration Submitted!</h2>
-          <p className="text-muted-foreground">Your team <span className="text-primary font-semibold">{teamName}</span> is approved and saved.</p>
-          <Button onClick={() => { setSubmitted(false); setTeamName(""); setCaptain(""); setCaptainAge(""); setPhone(""); setPlayers(Array.from({ length: 5 }, () => ({ name: "", age: "" }))); setSelectedCategory(""); setTeamValidationError(""); setSubmitError(""); setSection("rules"); }} variant="outline" className="border-primary/30 text-primary hover:bg-primary/10">
+          <p className="text-muted-foreground">Your team <span className="text-[#b3e5fc] font-semibold">{teamName}</span> is approved and saved.</p>
+          <Button onClick={() => { setSubmitted(false); setTeamName(""); setCaptain(""); setCaptainAge(""); setPhone(""); setPlayers(Array.from({ length: 5 }, () => ({ name: "", age: "" }))); setSelectedCategory(""); setTeamValidationError(""); setSubmitError(""); setSection("rules"); }} variant="outline" className="border-[#b3e5fc]/60 text-[#b3e5fc] hover:bg-[#b3e5fc]/20">
             Register Another Team
           </Button>
         </motion.div>
@@ -123,7 +123,7 @@ export default function RegisterPage() {
         <div className="flex gap-2 mb-8 justify-center">
           {["rules", "team", "payment"].map((s, i) => (
             <div key={s} className="flex items-center">
-              <div className={`h-10 w-10 rounded-full flex items-center justify-center font-display font-bold text-sm ${section === s ? "bg-primary text-primary-foreground" : i < ["rules", "team", "payment"].indexOf(section) ? "bg-primary text-primary-foreground" : "bg-border text-muted-foreground"}`}>
+              <div className={`h-10 w-10 rounded-full flex items-center justify-center font-display font-bold text-sm ${section === s ? "bg-[#b3e5fc] text-slate-900" : i < ["rules", "team", "payment"].indexOf(section) ? "bg-[#b3e5fc] text-slate-900" : "bg-border text-muted-foreground"}`}>
                 {i + 1}
               </div>
               {i < 2 && <div className="w-12 h-0.5 bg-border mx-1" />}
@@ -189,7 +189,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            <Button type="submit" size="lg" className="w-full font-display text-lg bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button type="submit" size="lg" className="w-full font-display text-lg bg-[#b3e5fc] text-slate-900 hover:bg-[#9fd8f2]">
               આગલો વિભાગ (Next)
             </Button>
           </motion.form>
@@ -208,8 +208,8 @@ export default function RegisterPage() {
                     key={cat.id}
                     className={`block p-3 rounded-lg border cursor-pointer transition-all ${
                       selectedCategory === cat.id
-                        ? "border-primary bg-primary/10"
-                        : "border-border bg-background hover:border-primary/40"
+                        ? "border-[#b3e5fc] bg-[#b3e5fc]/20"
+                        : "border-border bg-background hover:border-[#b3e5fc]/70"
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -354,12 +354,12 @@ export default function RegisterPage() {
                 type="button" 
                 variant="outline" 
                 size="lg" 
-                className="flex-1 border-primary/30 text-primary hover:bg-primary/10"
+                className="flex-1 border-[#b3e5fc]/60 text-[#b3e5fc] hover:bg-[#b3e5fc]/20"
                 onClick={() => setSection("rules")}
               >
                 પાછળ (Back)
               </Button>
-              <Button type="submit" size="lg" className="flex-1 font-display text-lg bg-primary text-primary-foreground hover:bg-primary/90" disabled={!selectedCategory}>
+              <Button type="submit" size="lg" className="flex-1 font-display text-lg bg-[#b3e5fc] text-slate-900 hover:bg-[#9fd8f2]" disabled={!selectedCategory}>
                 આગલો વિભાગ (Next)
               </Button>
             </div>
@@ -373,9 +373,9 @@ export default function RegisterPage() {
 
             <div className="space-y-3">
               <Label className="text-base font-semibold">પસંદ કરેલી શ્રેણી (Selected Category)</Label>
-              <div className="p-4 rounded-lg border border-primary/30 bg-primary/10">
+              <div className="p-4 rounded-lg border border-[#b3e5fc]/60 bg-[#b3e5fc]/20">
                 <p className="font-semibold text-foreground">{categories.find((c) => c.id === selectedCategory)?.label}</p>
-                <p className="text-primary font-display text-lg mt-1">₹{selectedFee}/-</p>
+                <p className="text-[#b3e5fc] font-display text-lg mt-1">₹{selectedFee}/-</p>
               </div>
             </div>
 
@@ -383,11 +383,11 @@ export default function RegisterPage() {
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-primary/10 border border-primary/30 rounded-lg p-6 space-y-4"
+                className="bg-[#b3e5fc]/20 border border-[#b3e5fc]/60 rounded-lg p-6 space-y-4"
               >
-                <div className="flex justify-between items-center pb-4 border-b border-primary/20">
+                <div className="flex justify-between items-center pb-4 border-b border-[#b3e5fc]/40">
                   <span className="font-display text-lg text-foreground">ચલણીય રકમ (Payable Amount)</span>
-                  <span className="font-display text-3xl font-bold text-primary">₹{selectedFee}/-</span>
+                  <span className="font-display text-3xl font-bold text-[#b3e5fc]">₹{selectedFee}/-</span>
                 </div>
 
                 <div className="bg-white p-4 rounded-lg flex justify-center">
@@ -422,7 +422,7 @@ export default function RegisterPage() {
                 type="button" 
                 variant="outline" 
                 size="lg" 
-                className="flex-1 border-primary/30 text-primary hover:bg-primary/10"
+                className="flex-1 border-[#b3e5fc]/60 text-[#b3e5fc] hover:bg-[#b3e5fc]/20"
                 onClick={() => setSection("team")}
               >
                 પાછળ (Back)
@@ -431,7 +431,7 @@ export default function RegisterPage() {
                 type="submit" 
                 size="lg" 
                 disabled={!selectedCategory || isSubmitting}
-                className="flex-1 font-display text-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 font-display text-lg bg-[#b3e5fc] text-slate-900 hover:bg-[#9fd8f2] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? "Saving..." : "નોંધણી સમાપ્ત કરો (Complete)"}
               </Button>
