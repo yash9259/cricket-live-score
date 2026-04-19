@@ -4,7 +4,7 @@
     if (!Number.isInteger(n)) return false;
     if (categoryId === "boys-11-15" || categoryId === "girls-11-15") {
       // Age must be between 11 and 15 (inclusive)
-      return n >= 11 && n <= 16;
+      return n >= 11 && n <= 15;
     }
     if (categoryId === "kids-5-10") {
       // Age must be between 5 and 10 (inclusive)
