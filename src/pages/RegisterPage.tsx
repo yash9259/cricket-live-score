@@ -475,7 +475,7 @@ export default function RegisterPage() {
                 className="flex-1 border-primary/30 text-primary hover:bg-primary/10"
                 onClick={() => setSection("team")}
               >
-                Back
+                Back 
               </Button>
               <Button 
                 type="submit" 
