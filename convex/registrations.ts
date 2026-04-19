@@ -1,6 +1,5 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { requireAdminSession } from "./adminAuth";
 
 export const createRegistration = mutation({
   args: {
@@ -28,11 +27,8 @@ export const createRegistration = mutation({
 });
 
 export const listRegistrations = query({
-  args: {
-    token: v.string(),
-  },
-  handler: async (ctx, args) => {
-    await requireAdminSession(ctx, args.token);
+  args: {},
+  handler: async (ctx) => {
     return await ctx.db.query("registrations").withIndex("by_createdAt").order("desc").take(200);
   },
 });
@@ -52,10 +48,8 @@ export const registrationStats = query({
 export const markPaid = mutation({
   args: {
     id: v.id("registrations"),
-    token: v.string(),
   },
   handler: async (ctx, args) => {
-    await requireAdminSession(ctx, args.token);
     await ctx.db.patch(args.id, { paymentStatus: "paid" });
   },
 });

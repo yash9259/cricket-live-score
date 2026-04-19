@@ -2,7 +2,7 @@ import { mutation, query, type MutationCtx, type QueryCtx } from "./_generated/s
 import { v } from "convex/values";
 
 const ADMIN_EMAIL = "admin@vrpyuvasangthanbhuj.in";
-const ADMIN_PASSWORD = "admin@vrpyuva2026";
+const ADMIN_PASSWORD = "admin@vrpyova123";
 const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
 
 type AuthCtx = QueryCtx | MutationCtx;

@@ -104,8 +104,8 @@ export default function RegisterPage() {
         >
           <CheckCircle className="h-20 w-20 text-primary mx-auto" />
           <h2 className="font-display text-4xl font-bold text-foreground">Registration Submitted!</h2>
-          <p className="text-muted-foreground">Your team <span className="text-[#b3e5fc] font-semibold">{teamName}</span> is approved and saved.</p>
-          <Button onClick={() => { setSubmitted(false); setTeamName(""); setCaptain(""); setCaptainAge(""); setPhone(""); setPlayers(Array.from({ length: 5 }, () => ({ name: "", age: "" }))); setSelectedCategory(""); setTeamValidationError(""); setSubmitError(""); setSection("rules"); }} variant="outline" className="border-[#b3e5fc]/60 text-[#b3e5fc] hover:bg-[#b3e5fc]/20">
+          <p className="text-muted-foreground">Your team <span className="text-primary font-semibold">{teamName}</span> is approved and saved.</p>
+          <Button onClick={() => { setSubmitted(false); setTeamName(""); setCaptain(""); setCaptainAge(""); setPhone(""); setPlayers(Array.from({ length: 5 }, () => ({ name: "", age: "" }))); setSelectedCategory(""); setTeamValidationError(""); setSubmitError(""); setSection("rules"); }} variant="outline" className="border-primary/30 text-primary hover:bg-primary/10">
             Register Another Team
           </Button>
         </motion.div>
@@ -117,13 +117,13 @@ export default function RegisterPage() {
     <div className="container mx-auto px-4 py-12 max-w-4xl">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="font-display text-4xl font-bold text-foreground mb-2">Box Cricket Registration</h1>
-        <p className="text-muted-foreground mb-8">VRP BOX CRICKET ટુર્નામેન્ટમાં તમારી ટીમની નોંધણી કરો</p>
+        <p className="text-muted-foreground mb-8">VRP BOX CRICKET ટુર્નામેન્ટમાં તમારી ટીમ નું રજીસ્ટ્રેશન કરો</p>
 
         {/* Progress Indicator */}
         <div className="flex gap-2 mb-8 justify-center">
           {["rules", "team", "payment"].map((s, i) => (
             <div key={s} className="flex items-center">
-              <div className={`h-10 w-10 rounded-full flex items-center justify-center font-display font-bold text-sm ${section === s ? "bg-[#b3e5fc] text-slate-900" : i < ["rules", "team", "payment"].indexOf(section) ? "bg-[#b3e5fc] text-slate-900" : "bg-border text-muted-foreground"}`}>
+              <div className={`h-10 w-10 rounded-full flex items-center justify-center font-display font-bold text-sm ${section === s ? "bg-primary text-primary-foreground" : i < ["rules", "team", "payment"].indexOf(section) ? "bg-primary text-primary-foreground" : "bg-border text-muted-foreground"}`}>
                 {i + 1}
               </div>
               {i < 2 && <div className="w-12 h-0.5 bg-border mx-1" />}
@@ -144,29 +144,31 @@ export default function RegisterPage() {
         {section === "rules" && (
           <motion.form onSubmit={handleSubmit} className="space-y-6 rounded-xl border border-border bg-card p-8">
             <div>
-              <h2 className="font-display text-2xl font-bold text-foreground mb-4">બોક્સ ક્રિકેટ ના નિયમો</h2>
-              <div className="space-y-4 text-sm leading-relaxed text-muted-foreground">
-                <p className="font-semibold text-foreground">⚠️ વેહલા તે પેહલા ના ધોરણે ફોર્મ સ્વીકારવા માં આવશે ફોર્મ ભરવા ની અંતિમ તારીખ <span className="font-bold">30/04/2026</span> રહેશે, નિશ્ચિત સંખ્યા માં ફોર્મ થઇ જશે તો <span className="font-bold">30/04/2026</span> પહેલા ફોર્મ બંધ કરી દેવા માં આવશે.</p>
-                <p>આ ટુર્નામેન્ટ ફક્ત લોહાણા જ્ઞાતિ પૂરતી મર્યાદિત છે.</p>
+              <h2 className="font-display text-2xl font-bold text-white mb-4">બોક્સ ક્રિકેટ ના નિયમો</h2>
+              <div className="space-y-4 text-sm leading-relaxed text-white">
+                <p className="font-semibold text-white">⚠️ વહેલા તે પહેલા ના ધોરણે ફોર્મ સ્વીકારવા માં આવશે ફોર્મ ભરવા ની અંતિમ તારીખ <span className="font-bold">30-04-2026</span> મર્યાદિત ટીમો લેવાની હોવાથી  <br></br>30-04-2026 પહેલા પણ ફોર્મ રજીસ્ટ્રેશન થઈ શકે છે.</p>
+                <p></p>
 
                 <ul className="space-y-3 list-disc list-inside">
+                  <li>આ ટુર્નામેન્ટ ફક્ત લોહાણા જ્ઞાતિ પૂરતી મર્યાદિત છે.</li>
                   <li>આ સમગ્ર બોક્સ ક્રિકેટ ટુર્નામેન્ટ પાંચ અલગ અલગ વિભાગમાં મેચ રમાડવામાં આવશે.</li>
                   <li>દરેક મેચ 6 ઓવરની રહેશે જેમાં દરેક ઓવર નો છેલ્લો બોલ સુપર બોલ રહેશે.</li>
                   <li>એક ખેલાડી એક જ ઓવર નાખી શકશે તથા એક ખેલાડી એક જ ટીમમાં ભાગ લઈ શકશે.</li>
+                  <li>૧૧ થી ૧૫ વર્ષની બાલિકાઓ તથા મહિલાઓ ની ટીમ માં કોઈ પણ ૧ પ્લેયર ૨ ઓવર નાખી શકશે.</li>
                   <li>વાઈડ તથા નોબોલ ના 2 રન રહેશે તથા દરેક નોબોલ પછીનો બોલ ફ્રી હિટ રહેશે.</li>
-                  <li>સુપર બોલ માં જો વાઈડ અથવા નો બોલ પડશે તો માત્ર 2 રન ગણાશે.</li>
+                  <li>સુપર બોલ માં જો વાઈડ અથવા નો બોલ પડશે તો 2 રન ગણાશે.</li>
                   <li>જો કોઈ બોલર ફાસ્ટ બોલ નાખશે તો અમ્પાયર નોબોલ આપી શકશે.</li>
                 </ul>
 
-                <p className="font-semibold text-foreground">📋 ફર્જિયાત નોંધણી અને ફી ભરણી</p>
+                <p className="font-semibold text-white"></p>
                 <ul className="space-y-2 list-disc list-inside">
-                  <li>એન્ટ્રી ફી ફરજિયાત ગુગલ પે (Google Pay) અથવા UPI (9033615897@upi) દ્વારા ભરવાની રહેશે.</li>
+                  <li>એન્ટ્રી ફી ફરજિયાત ગુગલ પે (Google Pay) 9033615897 દ્વારા ભરવાની રહેશે.</li>
                   <li>ફી ભર્યા બાદ તેનો સ્ક્રીનશોટ મોબાઇલ નંબર <span className="font-semibold">88661 14748 (યોગેશ મીરાણી)</span> પર ટીમ અને કેપ્ટન ના નામ સાથે Whatsapp કરવાનો રહેશે.</li>
                   <li>માત્ર ફોર્મ ભરેલું હશે અને એન્ટ્રી ફી બાકી હશે તો તે ટીમનું નામ ડ્રોમાં નાખવામાં આવશે નહિ.</li>
                   <li>ફોર્મ ભરવાની છેલ્લી તારીખ 31-04-2026 મંગળવાર સુધી રહેશે.</li>
                 </ul>
 
-                <p className="font-semibold text-foreground">👕 ડ્રેસ કોડ અને નિર્ણય</p>
+                <p className="font-semibold text-white"></p>
                 <ul className="space-y-2 list-disc list-inside">
                   <li>મેચ દરમિયાન દરેક ટીમે ફરજિયાત એક સરખા ડ્રેસ કોડમાં આવવાનું રહેશે.</li>
                   <li>સમગ્ર ટુર્નામેન્ટમાં અમ્પાયર નો નિર્ણય આખરી નિર્ણય રહેશે જે દરેક ટીમને બંધનકર્તા રહેશે.</li>
@@ -174,23 +176,31 @@ export default function RegisterPage() {
                 </ul>
 
                 <div className="bg-yellow-500/15 p-6 rounded-lg border-2 border-yellow-500/50 shadow-md">
-                  <p className="font-semibold text-foreground mb-3">👶 નાના બાળકો અને મહિલાઓ માટે</p>
-                  <p className="text-base font-bold text-yellow-700 dark:text-yellow-400 bg-yellow-500/20 p-3 rounded border-l-4 border-yellow-500">
-                    ⭐ જો બોલ એક ટીપ ખાઈ ને બીજી ટીપ લાઈન ની અંદર પડશે તો ગણતરી માં લેવા માં આવશે.
-                  </p>
-                  <p className="font-semibold text-foreground mb-2 mt-3">📞 વધુ માહિતી માટે સંપર્ક કરો</p>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <p><span className="font-semibold">નરેન એચ. મીરાણી</span><br />99250 41531</p>
-                    <p><span className="font-semibold">હાર્દિક બી આચાર્ય</span><br />9913060111</p>
-                    <p><span className="font-semibold">સંજય જે ઘટ્ટા</span><br />9173568000</p>
-                    <p><span className="font-semibold">કપિલ આર ઠક્કર</span><br />8758762625</p>
+                  <p className="font-semibold text-white mb-6 mt-4 text-center">વધુ માહિતી માટે પ્રોજેક્ટ ચેરમેન નો સંપર્ક કરો :</p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-x-5 text-center text-white">
+                    <div>
+                      <span className="font-bold">નરેન એચ. મીરાણી</span><br />
+                      <span className="font-bold">99250 41531</span>
+                    </div>
+                    <div>
+                      <span className="font-bold">હાર્દિક બી આચાર્ય</span><br />
+                      <span className="font-bold">9913060111</span>
+                    </div>
+                    <div>
+                      <span className="font-bold">સંજય જે ઘટ્ટા</span><br />
+                      <span className="font-bold">9173568000</span>
+                    </div>
+                    <div>
+                      <span className="font-bold">કપિલ આર ઠક્કર</span><br />
+                      <span className="font-bold">8758762625</span>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <Button type="submit" size="lg" className="w-full font-display text-lg bg-[#b3e5fc] text-slate-900 hover:bg-[#9fd8f2]">
-              આગલો વિભાગ (Next)
+            <Button type="submit" size="lg" className="w-full font-display text-lg bg-primary text-primary-foreground hover:bg-primary/90">
+              Next
             </Button>
           </motion.form>
         )}
@@ -198,18 +208,18 @@ export default function RegisterPage() {
         {/* Section 2: Team Details */}
         {section === "team" && (
           <motion.form onSubmit={handleSubmit} className="space-y-6 rounded-xl border border-border bg-card p-8">
-            <h2 className="font-display text-2xl font-bold text-foreground mb-4">ટીમ વિવરણ (Team Details)</h2>
+            <h2 className="font-display text-2xl font-bold text-foreground mb-4"></h2>
 
             <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-4">
-              <Label className="text-base font-semibold">શ્રેણી પસંદ કરો (Select Category)</Label>
+              <Label className="text-base font-semibold">Select Category</Label>
               <div className="space-y-2">
                 {categories.map((cat, index) => (
                   <label
                     key={cat.id}
                     className={`block p-3 rounded-lg border cursor-pointer transition-all ${
                       selectedCategory === cat.id
-                        ? "border-[#b3e5fc] bg-[#b3e5fc]/20"
-                        : "border-border bg-background hover:border-[#b3e5fc]/70"
+                        ? "border-primary bg-primary/10"
+                        : "border-border bg-background hover:border-primary/40"
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -227,7 +237,7 @@ export default function RegisterPage() {
                       />
                       <div>
                         <p className="text-sm font-medium text-foreground">
-                          {index + 1}... {cat.label} (એન્ટ્રી ફી રૂ. {cat.fee}/-)
+                          ({index + 1}). {cat.label} (એન્ટ્રી ફી રૂ. {cat.fee}/-)
                         </p>
                       </div>
                     </div>
@@ -286,29 +296,26 @@ export default function RegisterPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="captainAge" className="font-semibold">Captain Age <span className="text-destructive">*</span></Label>
-                <select
+                <Input
                   id="captainAge"
+                  type="number"
+                  min={1}
+                  max={99}
                   value={captainAge}
-                  onChange={(e) => setCaptainAge(e.target.value)}
+                  onChange={e => setCaptainAge(e.target.value)}
                   required
+                  placeholder="Write Age"
                   className="w-full rounded-md border border-border bg-muted px-3 py-2"
-                >
-                  <option value="">ઉંમર પસંદ કરો</option>
-                  {ageOptions.map((age) => (
-                    <option key={age} value={age}>
-                      {age}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
             </div>
 
             {/* Players */}
             <div className="space-y-4">
-              <h3 className="font-display text-lg font-bold text-foreground">ખેલાડીઓ (પંક્તિ 2-6) - Players</h3>
+              <h3 className="font-display text-lg font-bold text-foreground"> Players</h3>
               {players.map((player, i) => (
                 <div key={i} className="p-4 rounded-lg border border-border bg-muted/20 space-y-3">
-                  <p className="font-semibold text-foreground text-sm">ખેલાડી #{i + 2}</p>
+                  <p className="font-semibold text-foreground text-sm">Player {i + 2}</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <Label htmlFor={`player-name-${i}`} className="text-xs font-semibold">ખેલાડીનું નામ <span className="text-destructive">*</span></Label>
@@ -323,20 +330,17 @@ export default function RegisterPage() {
                     </div>
                     <div className="space-y-1">
                       <Label htmlFor={`player-age-${i}`} className="text-xs font-semibold">ઉંમર <span className="text-destructive">*</span></Label>
-                      <select
+                      <Input
                         id={`player-age-${i}`}
+                        type="number"
+                        min={1}
+                        max={99}
                         value={player.age}
-                        onChange={(e) => updatePlayer(i, "age", e.target.value)}
+                        onChange={e => updatePlayer(i, "age", e.target.value)}
                         required
+                        placeholder="ઉંમર લખો (Write Age)"
                         className="w-full rounded-md border border-border bg-background px-3 py-2"
-                      >
-                        <option value="">ઉંમર પસંદ કરો</option>
-                        {ageOptions.map((age) => (
-                          <option key={age} value={age}>
-                            {age}
-                          </option>
-                        ))}
-                      </select>
+                      />
                     </div>
                   </div>
                 </div>
@@ -354,13 +358,13 @@ export default function RegisterPage() {
                 type="button" 
                 variant="outline" 
                 size="lg" 
-                className="flex-1 border-[#b3e5fc]/60 text-[#b3e5fc] hover:bg-[#b3e5fc]/20"
+                className="flex-1 border-primary/30 text-primary hover:bg-primary/10"
                 onClick={() => setSection("rules")}
               >
-                પાછળ (Back)
+                Back
               </Button>
-              <Button type="submit" size="lg" className="flex-1 font-display text-lg bg-[#b3e5fc] text-slate-900 hover:bg-[#9fd8f2]" disabled={!selectedCategory}>
-                આગલો વિભાગ (Next)
+              <Button type="submit" size="lg" className="flex-1 font-display text-lg bg-primary text-primary-foreground hover:bg-primary/90" disabled={!selectedCategory}>
+                Next
               </Button>
             </div>
           </motion.form>
@@ -369,13 +373,13 @@ export default function RegisterPage() {
         {/* Section 3: Payment */}
         {section === "payment" && (
           <motion.form onSubmit={handleSubmit} className="space-y-6 rounded-xl border border-border bg-card p-8">
-            <h2 className="font-display text-2xl font-bold text-foreground mb-4">ચલણ અને શ્રેણી (Category & Payment)</h2>
+            <h2 className="font-display text-2xl font-bold text-foreground mb-4"></h2>
 
             <div className="space-y-3">
-              <Label className="text-base font-semibold">પસંદ કરેલી શ્રેણી (Selected Category)</Label>
-              <div className="p-4 rounded-lg border border-[#b3e5fc]/60 bg-[#b3e5fc]/20">
+              <Label className="text-base font-semibold"></Label>
+              <div className="p-4 rounded-lg border border-primary/30 bg-primary/10">
                 <p className="font-semibold text-foreground">{categories.find((c) => c.id === selectedCategory)?.label}</p>
-                <p className="text-[#b3e5fc] font-display text-lg mt-1">₹{selectedFee}/-</p>
+                <p className="text-primary font-display text-lg mt-1">₹{selectedFee}/-</p>
               </div>
             </div>
 
@@ -383,11 +387,11 @@ export default function RegisterPage() {
               <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-[#b3e5fc]/20 border border-[#b3e5fc]/60 rounded-lg p-6 space-y-4"
+                className="bg-primary/10 border border-primary/30 rounded-lg p-6 space-y-4"
               >
-                <div className="flex justify-between items-center pb-4 border-b border-[#b3e5fc]/40">
-                  <span className="font-display text-lg text-foreground">ચલણીય રકમ (Payable Amount)</span>
-                  <span className="font-display text-3xl font-bold text-[#b3e5fc]">₹{selectedFee}/-</span>
+                <div className="flex justify-between items-center pb-4 border-b border-primary/20">
+                  <span className="font-display text-lg text-foreground">Fees</span>
+                  <span className="font-display text-3xl font-bold text-primary">₹{selectedFee}/-</span>
                 </div>
 
                 <div className="bg-white p-4 rounded-lg flex justify-center">
@@ -398,10 +402,7 @@ export default function RegisterPage() {
                   />
                 </div>
 
-                <div className="bg-muted/50 p-3 rounded text-center space-y-1">
-                  <p className="text-xs text-muted-foreground">UPI ID / QR Code માટે</p>
-                  <p className="font-display font-bold text-foreground">9033615897@upi</p>
-                </div>
+                
 
                 <div className="bg-red-500/20 border-2 border-red-600 rounded-lg p-6 shadow-lg">
                   <div className="flex gap-3 items-start">
@@ -409,7 +410,7 @@ export default function RegisterPage() {
                     <div className="flex-1">
                       <p className="text-lg font-bold text-white mb-2">⭐ મહત્વપૂર્ણ</p>
                       <p className="text-base font-semibold text-white leading-relaxed">
-                        ચલણ કર્યા પછી સ્ક્રીનશોટ <span className="font-display text-lg bg-red-600/30 px-2 py-1 rounded">88661 14748</span> (યોગેશ) પર WhatsApp કરો
+                        goole pay કર્યા પછી સ્ક્રીનશોટ <br></br><span className="font-display text-lg bg-red-600/30 px-2 py-1 rounded">88661 14748</span> (યોગેશ મીરાણી) પર WhatsApp કરો
                       </p>
                     </div>
                   </div>
@@ -422,18 +423,18 @@ export default function RegisterPage() {
                 type="button" 
                 variant="outline" 
                 size="lg" 
-                className="flex-1 border-[#b3e5fc]/60 text-[#b3e5fc] hover:bg-[#b3e5fc]/20"
+                className="flex-1 border-primary/30 text-primary hover:bg-primary/10"
                 onClick={() => setSection("team")}
               >
-                પાછળ (Back)
+                Back
               </Button>
               <Button 
                 type="submit" 
                 size="lg" 
                 disabled={!selectedCategory || isSubmitting}
-                className="flex-1 font-display text-lg bg-[#b3e5fc] text-slate-900 hover:bg-[#9fd8f2] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 font-display text-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? "Saving..." : "નોંધણી સમાપ્ત કરો (Complete)"}
+                {isSubmitting ? "Saving..." : "Submit"}
               </Button>
             </div>
 
