@@ -122,7 +122,7 @@ export default function RegisterPage() {
     <div className="container mx-auto px-4 py-12 max-w-4xl">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="font-display text-4xl font-bold text-foreground mb-2">Box Cricket Registration</h1>
-        <p className="text-muted-foreground mb-8">VRP BOX CRICKET ટુર્નામેન્ટમાં તમારી ટીમ નું રજીસ્ટ્રેશન કરો</p>
+        <p className="text-muted-foreground mb-8">ટુર્નામેન્ટમાં તમારી ટીમ નું રજીસ્ટ્રેશન કરો</p>
 
         {/* Progress Indicator */}
         <div className="flex gap-2 mb-8 justify-center">
