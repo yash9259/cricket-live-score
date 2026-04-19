@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 
 const categories = [
   { id: "youth", label: "યુવાનો 16 વર્ષ થી ઉપરના", fee: 1500 },
-  { id: "women", label: "યુવતીઓ તથા મહિલાઓ 16 વર્ષ થી ઉપર ની", fee: 1200 },
+  { id: "women", label: "યુવતીઓ તથા મહિલાઓ 16 વર્ષ થી વધુ ઉંમર ના ", fee: 1200 },
   { id: "boys-11-15", label: "બાળકો (11 થી 15 વર્ષ) - 01-04-2011 પછી જન્મ હોવો જોઈએ", fee: 900 },
   { id: "girls-11-15", label: "બાલિકાઓ (11 થી 15 વર્ષ) - 01-04-2011 પછી જન્મ હોવો જોઈએ", fee: 900 },
   { id: "kids-5-10", label: "બાળકો તથા બાલિકાઓ (5 થી 10 વર્ષ) - 01-04-2016 પછી જન્મ હોવો જોઈએ", fee: 900 },
@@ -259,7 +259,6 @@ export default function RegisterPage() {
                   id="teamName" 
                   value={teamName} 
                   onChange={(e) => setTeamName(e.target.value)} 
-                  placeholder="દા.ત. Lightning Strikers" 
                   required 
                   className="bg-muted border-border" 
                 />
@@ -272,7 +271,6 @@ export default function RegisterPage() {
                     id="captain" 
                     value={captain} 
                     onChange={(e) => setCaptain(e.target.value)} 
-                    placeholder="સંપૂર્ણ નામ" 
                     required 
                     className="bg-muted border-border" 
                   />
@@ -287,7 +285,6 @@ export default function RegisterPage() {
                       const numOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
                       setPhone(numOnly);
                     }}
-                    placeholder="9876543210" 
                     maxLength={10}
                     pattern="[0-9]{10}"
                     required 
@@ -300,7 +297,7 @@ export default function RegisterPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="captainAge" className="font-semibold">Captain Age <span className="text-destructive">*</span></Label>
+                <Label htmlFor="captainAge" className="font-semibold">ઉંમર (Captain Age) <span className="text-destructive">*</span></Label>
                 <Input
                   id="captainAge"
                   type="number"
@@ -309,7 +306,6 @@ export default function RegisterPage() {
                   value={captainAge}
                   onChange={e => setCaptainAge(e.target.value)}
                   required
-                  placeholder="Write Age"
                   className="w-full rounded-md border border-border bg-muted px-3 py-2"
                 />
               </div>
@@ -328,7 +324,6 @@ export default function RegisterPage() {
                         id={`player-name-${i}`}
                         value={player.name}
                         onChange={(e) => updatePlayer(i, "name", e.target.value)}
-                        placeholder={`ખેલાડી ${i + 2} નું નામ`}
                         required
                         className="bg-background border-border"
                       />
@@ -343,7 +338,6 @@ export default function RegisterPage() {
                         value={player.age}
                         onChange={e => updatePlayer(i, "age", e.target.value)}
                         required
-                        placeholder="ઉંમર લખો (Write Age)"
                         className="w-full rounded-md border border-border bg-background px-3 py-2"
                       />
                     </div>
