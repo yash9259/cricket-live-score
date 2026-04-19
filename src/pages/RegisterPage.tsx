@@ -64,7 +64,8 @@ export default function RegisterPage() {
 
   const selectedFee = categories.find(c => c.id === selectedCategory)?.fee || 0;
   // Add note to UPI payment URL
-  const upiNote = `payment for box cricket : ${teamName || "team"}`;
+  const selectedCategoryLabel = categories.find(c => c.id === selectedCategory)?.label || "category";
+  const upiNote = `${teamName || "team"} : ${selectedCategoryLabel}`;
   const upiPaymentUrl = `upi://pay?pa=9033615897@upi&pn=VRP Box Cricket&am=${selectedFee}&cu=INR&tn=${encodeURIComponent(upiNote)}`;
   const qrCodeSrc = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiPaymentUrl)}`;
 
