@@ -151,7 +151,7 @@ export default function RegisterPage() {
             <div>
               <h2 className="font-display text-2xl font-bold text-white mb-4">બોક્સ ક્રિકેટ ના નિયમો</h2>
               <div className="space-y-4 text-sm leading-relaxed text-white">
-                <p className="font-semibold text-white">⚠️ વહેલા તે પહેલા ના ધોરણે ફોર્મ સ્વીકારવા માં આવશે ફોર્મ ભરવા ની અંતિમ તારીખ <span className="font-bold">30-04-2026</span> મર્યાદિત ટીમો લેવાની હોવાથી  <br></br>30-04-2026 પહેલા પણ ફોર્મ રજીસ્ટ્રેશન થઈ શકે છે.</p>
+                <p className="font-semibold text-white">⚠️ વહેલા તે પહેલા ના ધોરણે ફોર્મ સ્વીકારવા માં આવશે ફોર્મ ભરવા ની અંતિમ તારીખ <span className="font-bold">30-04-2026 રહેશે <br /></span> મર્યાદિત ટીમો લેવાની હોવાથી  <br></br>30-04-2026 પહેલા પણ ફોર્મ રજીસ્ટ્રેશન બંધ થઈ શકે છે.</p>
                 <p></p>
 
                 <ul className="space-y-3 list-disc list-inside">
@@ -167,10 +167,10 @@ export default function RegisterPage() {
 
                 <p className="font-semibold text-white"></p>
                 <ul className="space-y-2 list-disc list-inside">
-                  <li>એન્ટ્રી ફી ફરજિયાત ગુગલ પે (Google Pay) 9033615897 દ્વારા ભરવાની રહેશે.</li>
+                  <li>એન્ટ્રી ફી ફરજિયાત ગુગલ પે (Google Pay) <span className="font-bold">9033615897</span> દ્વારા ભરવાની રહેશે.</li>
                   <li>ફી ભર્યા બાદ તેનો સ્ક્રીનશોટ મોબાઇલ નંબર <span className="font-semibold">88661 14748 (યોગેશ મીરાણી)</span> પર ટીમ અને કેપ્ટન ના નામ સાથે Whatsapp કરવાનો રહેશે.</li>
                   <li>માત્ર ફોર્મ ભરેલું હશે અને એન્ટ્રી ફી બાકી હશે તો તે ટીમનું નામ ડ્રોમાં નાખવામાં આવશે નહિ.</li>
-                  <li>ફોર્મ ભરવાની છેલ્લી તારીખ 31-04-2026 મંગળવાર સુધી રહેશે.</li>
+                  <li>ફોર્મ ભરવાની છેલ્લી તારીખ 30-04-2026 ગુરુવાર સુધી રહેશે.</li>
                 </ul>
 
                 <p className="font-semibold text-white"></p>
@@ -184,19 +184,19 @@ export default function RegisterPage() {
                   <p className="font-semibold text-white mb-6 mt-4 text-center">વધુ માહિતી માટે પ્રોજેક્ટ ચેરમેન નો સંપર્ક કરો :</p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-x-5 text-center text-white">
                     <div>
-                      <span className="font-bold">નરેન એચ. મીરાણી</span><br />
+                      <span className="font-bold whitespace-nowrap">નરેન એચ. મીરાણી</span><br />
                       <span className="font-bold">99250 41531</span>
                     </div>
                     <div>
-                      <span className="font-bold">હાર્દિક બી આચાર્ય</span><br />
+                      <span className="font-bold whitespace-nowrap">હાર્દિક બી આચાર્ય</span><br />
                       <span className="font-bold">9913060111</span>
                     </div>
                     <div>
-                      <span className="font-bold">સંજય જે ઘટ્ટા</span><br />
+                      <span className="font-bold whitespace-nowrap">સંજય જે ઘટ્ટા</span><br />
                       <span className="font-bold">9173568000</span>
                     </div>
                     <div>
-                      <span className="font-bold">કપિલ આર ઠક્કર</span><br />
+                      <span className="font-bold whitespace-nowrap">કપિલ આર ઠક્કર</span><br />
                       <span className="font-bold">8758762625</span>
                     </div>
                   </div>
@@ -413,9 +413,9 @@ export default function RegisterPage() {
                   <div className="flex gap-3 items-start">
                     <AlertCircle className="h-6 w-6 text-red-600 shrink-0 mt-1 animate-pulse" />
                     <div className="flex-1">
-                      <p className="text-lg font-bold text-white mb-2">⭐ મહત્વપૂર્ણ</p>
+                      <p className="text-lg font-bold text-white mb-2">⭐ ખાશ નોંધ </p>
                       <p className="text-base font-semibold text-white leading-relaxed">
-                        goole pay કર્યા પછી સ્ક્રીનશોટ <br></br><span className="font-display text-lg bg-red-600/30 px-2 py-1 rounded">88661 14748</span> (યોગેશ મીરાણી) પર WhatsApp કરો
+                        google pay માં paymant કાર્ય બાદ તેનો સ્ક્રીનશોટ નીચે આપેલ નંબર ટીમ ના નામ સાથે <br></br><span className="font-display text-lg bg-red-600/30 px-2 py-1 rounded">88661 14748</span> (યોગેશ મીરાણી) પર WhatsApp કરવા નો રહશે.
                       </p>
                     </div>
                   </div>
