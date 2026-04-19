@@ -1,3 +1,23 @@
+  // Helper: category age validation
+  function isAgeValidForCategory(categoryId, age) {
+    const n = Number(age);
+    if (!Number.isInteger(n)) return false;
+    if (categoryId === "boys-11-15" || categoryId === "girls-11-15") {
+      // Age must be between 11 and 15 (inclusive)
+      return n >= 11 && n <= 15;
+    }
+    if (categoryId === "kids-5-10") {
+      // Age must be between 5 and 10 (inclusive)
+      return n >= 5 && n <= 10;
+    }
+    // Other categories: no special check
+    return true;
+  }
+
+  // Helper: get category label for error
+  function getCategoryLabel(categoryId) {
+    return categories.find(c => c.id === categoryId)?.label || "";
+  }
 import { useState } from "react";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
@@ -56,17 +76,32 @@ export default function RegisterPage() {
         return;
       }
 
-      const captainAgeNumber = Number(captainAge);
-      if (!Number.isInteger(captainAgeNumber) || captainAgeNumber < 1 || captainAgeNumber > 99) {
-        setTeamValidationError("Captain age must be between 1 and 99.");
-        return;
-      }
 
-      for (let i = 0; i < players.length; i++) {
-        const playerAge = Number(players[i].age);
-        if (!Number.isInteger(playerAge) || playerAge < 1 || playerAge > 99) {
-          setTeamValidationError(`Player ${i + 2} age must be between 1 and 99.`);
+      // Category-specific age validation
+      if (["boys-11-15", "girls-11-15", "kids-5-10"].includes(selectedCategory)) {
+        if (!isAgeValidForCategory(selectedCategory, captainAge)) {
+          setTeamValidationError(`તમારી ઉંમર આપેલ category માટે અમાન્ય છે`);
           return;
+        }
+        for (let i = 0; i < players.length; i++) {
+          if (!isAgeValidForCategory(selectedCategory, players[i].age)) {
+            setTeamValidationError(`Player ${i + 2}: તમારી ઉંમર આપેલ category માટે અમાન્ય છે`);
+            return;
+          }
+        }
+      } else {
+        // Default validation for other categories
+        const captainAgeNumber = Number(captainAge);
+        if (!Number.isInteger(captainAgeNumber) || captainAgeNumber < 1 || captainAgeNumber > 99) {
+          setTeamValidationError("Captain age must be between 1 and 99.");
+          return;
+        }
+        for (let i = 0; i < players.length; i++) {
+          const playerAge = Number(players[i].age);
+          if (!Number.isInteger(playerAge) || playerAge < 1 || playerAge > 99) {
+            setTeamValidationError(`Player ${i + 2} age must be between 1 and 99.`);
+            return;
+          }
         }
       }
 
@@ -409,7 +444,7 @@ export default function RegisterPage() {
                     <div className="flex-1">
                       <p className="text-lg font-bold text-white mb-2">⭐ ખાશ નોંધ </p>
                       <p className="text-base font-semibold text-white leading-relaxed">
-                        google pay માં paymant કાર્ય બાદ તેનો સ્ક્રીનશોટ નીચે આપેલ નંબર ટીમ ના નામ સાથે <br></br><span className="font-display text-lg bg-red-600/30 px-2 py-1 rounded">88661 14748</span> (યોગેશ મીરાણી) પર WhatsApp કરવા નો રહશે.
+                        google pay માં paymant કર્યા  બાદ તેનો સ્ક્રીનશોટ નીચે આપેલ નંબર ટીમ ના નામ સાથે <br></br><span className="font-display text-lg bg-red-600/30 px-2 py-1 rounded">88661 14748</span> (યોગેશ મીરાણી) પર WhatsApp કરવા નો રહશે.
                       </p>
                     </div>
                   </div>
