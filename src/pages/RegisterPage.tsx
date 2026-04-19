@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Plus, Trash2, CheckCircle, AlertCircle } from "lucide-react";
 import { useMutation } from "convex/react";
@@ -19,6 +20,10 @@ const ageOptions = Array.from({ length: 99 }, (_, i) => i + 1);
 
 export default function RegisterPage() {
   const [section, setSection] = useState<"rules" | "team" | "payment">("rules");
+  // Scroll to top on section change
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [section]);
   const [teamName, setTeamName] = useState("");
   const [captain, setCaptain] = useState("");
   const [captainAge, setCaptainAge] = useState("");
