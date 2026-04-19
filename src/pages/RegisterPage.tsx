@@ -64,7 +64,7 @@ export default function RegisterPage() {
 
   const selectedFee = categories.find(c => c.id === selectedCategory)?.fee || 0;
   // Add note to UPI payment URL
-  const upiNote = `paymant for box crict : ${teamName || "team"}`;
+  const upiNote = `payment for box cricket : ${teamName || "team"}`;
   const upiPaymentUrl = `upi://pay?pa=9033615897@upi&pn=VRP Box Cricket&am=${selectedFee}&cu=INR&tn=${encodeURIComponent(upiNote)}`;
   const qrCodeSrc = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiPaymentUrl)}`;
 
@@ -446,7 +446,7 @@ export default function RegisterPage() {
                     rel="noopener noreferrer"
                     className="inline-block px-6 py-3 bg-green-600 text-white font-bold rounded-lg shadow hover:bg-green-700 transition-colors text-lg"
                   >
-                    Pay Now with Google Pay
+                    Click here and open QR code 
                   </a>
                 </div>
 
