@@ -436,6 +436,18 @@ export default function RegisterPage() {
                   />
                 </div>
 
+                {/* Pay Now Button */}
+                <div className="flex justify-center mt-4">
+                  <a
+                    href={upiPaymentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block px-6 py-3 bg-green-600 text-white font-bold rounded-lg shadow hover:bg-green-700 transition-colors text-lg"
+                  >
+                    Pay Now with Google Pay
+                  </a>
+                </div>
+
                 
 
                 <div className="bg-red-500/20 border-2 border-red-600 rounded-lg p-6 shadow-lg">
