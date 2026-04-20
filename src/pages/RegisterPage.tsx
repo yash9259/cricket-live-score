@@ -19,6 +19,7 @@ function getCategoryLabel(categoryId) {
   return categories.find(c => c.id === categoryId)?.label || "";
 }
 import { useState } from "react";
+import { toast } from "@/components/ui/use-toast";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Plus, Trash2, CheckCircle, AlertCircle } from "lucide-react";
@@ -41,7 +42,6 @@ const ageOptions = Array.from({ length: 99 }, (_, i) => i + 1);
 export default function RegisterPage() {
   const [section, setSection] = useState<"rules" | "team" | "payment">("rules");
   // Toast
-  const { toast } = require("@/components/ui/use-toast");
   // Scroll to top on section change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
