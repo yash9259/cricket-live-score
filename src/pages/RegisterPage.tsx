@@ -63,9 +63,8 @@ export default function RegisterPage() {
   };
 
   const selectedFee = categories.find(c => c.id === selectedCategory)?.fee || 0;
-  // Add note to UPI payment URL
-  const selectedCategoryLabel = categories.find(c => c.id === selectedCategory)?.label || "category";
-  const upiNote = `${teamName || "team"} : ${selectedCategoryLabel}`;
+  // Add note to UPI payment URL (only team name)
+  const upiNote = teamName && teamName.trim() ? teamName.trim() : "team";
   const upiPaymentUrl = `upi://pay?pa=9033615897@upi&pn=VRP Box Cricket&am=${selectedFee}&cu=INR&tn=${encodeURIComponent(upiNote)}`;
   const qrCodeSrc = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiPaymentUrl)}`;
 
@@ -176,7 +175,7 @@ export default function RegisterPage() {
 
         <div className="mb-8 overflow-hidden rounded-xl border border-border bg-card">
           <img
-            src="/form%20banner.jpeg"
+            src="/formbanner.jpeg"
             alt="Registration form banner"
             className="h-auto w-full object-cover"
             loading="lazy"
@@ -189,15 +188,17 @@ export default function RegisterPage() {
             <div>
               <h2 className="font-display text-2xl font-bold text-white mb-4">બોક્સ ક્રિકેટ ના નિયમો</h2>
               <div className="space-y-4 text-sm leading-relaxed text-white">
-                <p className="font-semibold text-white">⚠️ વહેલા તે પહેલા ના ધોરણે ફોર્મ સ્વીકારવા માં આવશે ફોર્મ ભરવા ની અંતિમ તારીખ <span className="font-bold">30-04-2026 રહેશે <br /></span> મર્યાદિત ટીમો લેવાની હોવાથી  <br></br>30-04-2026 પહેલા પણ ફોર્મ રજીસ્ટ્રેશન બંધ થઈ શકે છે.</p>
+                <p className="font-semibold text-white">⚠️ વહેલા તે પહેલા ના ધોરણે ફોર્મ સ્વીકારવા માં આવશે ફોર્મ ભરવા ની અંતિમ તારીખ <span className="font-bold">30-04-2026 રહેશે <br /></span> મર્યાદિત ટીમો લેવાની હોવાથી  <br></br>30-04-2026 પહેલા પણ રજીસ્ટ્રેશન ફોર્મ બંધ થઈ શકે છે.</p>
                 <p></p>
 
                 <ul className="space-y-3 list-disc list-inside">
                   <li>આ ટુર્નામેન્ટ ફક્ત લોહાણા જ્ઞાતિ પૂરતી મર્યાદિત છે.</li>
+                  <li>ટુર્નામેન્ટ તા.10-05-2026 રવિવાર થી 17-05-2026 રવિવાર સુધી રહેશે.</li>
                   <li>આ સમગ્ર બોક્સ ક્રિકેટ ટુર્નામેન્ટ પાંચ અલગ અલગ વિભાગમાં મેચ રમાડવામાં આવશે.</li>
                   <li>દરેક મેચ 6 ઓવરની રહેશે જેમાં દરેક ઓવર નો છેલ્લો બોલ સુપર બોલ રહેશે.</li>
-                  <li>એક ખેલાડી એક જ ઓવર નાખી શકશે તથા એક ખેલાડી એક જ ટીમમાં ભાગ લઈ શકશે.</li>
-                  <li>11 થી 15 વર્ષની બાલિકાઓ તથા મહિલાઓ ની ટીમ માં કોઈ પણ 1 પ્લેયર 2 ઓવર નાખી શકશે.</li>
+                  <li>એક ખેલાડી એક જ ટીમમાં ભાગ લઈ શકશે.</li>
+                  <li>11 થી 15 વર્ષના બાળકો તથા 16 વર્ષની વધુ ઉંમર વર્ષના ખેલાડી એક જ ઓવર નાખી શકશે.</li>
+                  <li>5 થી 10 વર્ષના બાળકો,11 થી 15 વર્ષની બાલિકાઓ તથા મહિલાઓ ની ટીમ માં કોઈ પણ 1 પ્લેયર 2 ઓવર નાખી શકશે. </li>
                   <li>વાઈડ તથા નોબોલ ના 2 રન રહેશે તથા દરેક નોબોલ પછીનો બોલ ફ્રી હિટ રહેશે.</li>
                   <li>સુપર બોલ માં જો વાઈડ અથવા નો બોલ પડશે તો 2 રન ગણાશે.</li>
                   <li>જો કોઈ બોલર ફાસ્ટ બોલ નાખશે તો અમ્પાયર નોબોલ આપી શકશે.</li>
@@ -220,9 +221,9 @@ export default function RegisterPage() {
 
                 <p className="font-bold text-white">બાળકો ની ટીમ માટે ખાસ નિયમ :</p>
                 <ul className="space-y-2 list-disc list-inside">
-                  <li>5 થી 10 વર્ષની ટીમ ના કેપ્ટને પોતાની ટીમ ના ખેલાડી ના આધાર કાર્ડ યશ મીરાણી (98798 79348) નંબર પર Whatsapp કરવાના રહેશે.</li>
-                  <li>11 થી 15 વર્ષની બાળકો ની  ટીમ ના કેપ્ટને પોતાની ટીમ ના ખેલાડી ના આધાર કાર્ડ હાર્દિક આચાર્ય (99130 60111) નંબર પર Whatsapp કરવાના રહેશે.</li>
-                  <li>11 થી 15 વર્ષની બાલિકાઓ ની  ટીમ ના કેપ્ટને પોતાની ટીમ ના ખેલાડી ના આધાર કાર્ડ કપિલ ઠક્કર (87587 62625) નંબર પર Whatsapp કરવાના રહેશે.</li>
+                  <li>5 થી 10 વર્ષની ટીમ ના કેપ્ટને પોતાની ટીમ ના ખેલાડી ના આધાર કાર્ડ યશભાઈ એન. મીરાની  (98798 79348) નંબર પર Whatsapp કરવાના રહેશે.</li>
+                  <li>11 થી 15 વર્ષની બાળકો ની  ટીમ ના કેપ્ટને પોતાની ટીમ ના ખેલાડી ના આધાર કાર્ડ હાર્દિકભાઈ બી.આચાર્ય (99130 60111) નંબર પર Whatsapp કરવાના રહેશે.</li>
+                  <li>11 થી 15 વર્ષની બાલિકાઓ ની  ટીમ ના કેપ્ટને પોતાની ટીમ ના ખેલાડી ના આધાર કાર્ડ કપિલભાઈ આર. રૈયા  (87587 62625) નંબર પર Whatsapp કરવાના રહેશે.</li>
                 </ul>
 
                 <div className="bg-yellow-500/15 p-6 rounded-lg border-2 border-yellow-500/50 shadow-md">
