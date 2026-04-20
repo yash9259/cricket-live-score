@@ -587,7 +587,7 @@ const ageOptions = Array.from({ length: 99 }, (_, i) => i + 1);
                   <AlertCircle className="h-12 w-12 text-red-500" />
                 </div>
                 <h3 className="font-display text-2xl font-bold text-foreground">Screenshot Required</h3>
-                <p className="text-lg text-muted-foreground font-semibold">તમારા payment નો screenshort add કરો</p>
+                <p className="text-lg text-muted-foreground font-semibold">તમારા payment નો screenshort  add કરો</p>
                 <Button
                   onClick={() => setShowScreenshotAlert(false)}
                   size="lg"
