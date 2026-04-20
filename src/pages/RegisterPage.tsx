@@ -30,7 +30,7 @@ import { Label } from "@/components/ui/label";
 
 const categories = [
   { id: "youth", label: "યુવાનો 16 વર્ષ થી ઉપરના", fee: 1500 },
-  { id: "women", label: "યુવતીઓ તથા મહિલાઓ 16 વર્ષ થી વધુ ઉંમર ના ", fee: 1200 },
+  { id: "women", label: "મહિલાઓ તથા 16 વર્ષ થી વધુ ઉંમર ની યુવતીઓ  ", fee: 1200 },
   { id: "boys-11-15", label: "બાળકો (11 થી 15 વર્ષ) - 01-04-2011 પછી જન્મ હોવો જોઈએ", fee: 900 },
   { id: "girls-11-15", label: "બાલિકાઓ (11 થી 15 વર્ષ) - 01-04-2011 પછી જન્મ હોવો જોઈએ", fee: 900 },
   { id: "kids-5-10", label: "બાળકો તથા બાલિકાઓ (5 થી 10 વર્ષ) - 01-04-2016 પછી જન્મ હોવો જોઈએ", fee: 900 },
@@ -40,6 +40,8 @@ const ageOptions = Array.from({ length: 99 }, (_, i) => i + 1);
 
 export default function RegisterPage() {
   const [section, setSection] = useState<"rules" | "team" | "payment">("rules");
+  // Toast
+  const { toast } = require("@/components/ui/use-toast");
   // Scroll to top on section change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -91,6 +93,12 @@ export default function RegisterPage() {
     } else if (section === "team") {
       if (!selectedCategory) {
         setTeamValidationError("Please select a category.");
+        toast({
+          title: "Category Required",
+          description: "Please select a category to continue.",
+          variant: "destructive"
+        });
+        setSection("team");
         return;
       }
 
@@ -235,7 +243,7 @@ export default function RegisterPage() {
                   <li>દરેક મેચ 6 ઓવરની રહેશે જેમાં દરેક ઓવર નો છેલ્લો બોલ સુપર બોલ રહેશે.</li>
                   <li>એક ખેલાડી એક જ ટીમમાં ભાગ લઈ શકશે.</li>
                   <li>11 થી 15 વર્ષના બાળકો તથા યુવાનો માં કોઈ પણ 1 પ્લેયર 1 જ ઓવર નાખી શકશે.  </li>
-                  <li>5 થી 10 વર્ષના બાળકો,11 થી 15 વર્ષની બાલિકાઓ તથા મહિલાઓ ની ટીમ માં કોઈ પણ 1 જ પ્લેયર 2 ઓવર નાખી શકશે. </li>
+                  <li>5 થી 10 વર્ષના બાળકો,11 થી 15 વર્ષની બાલિકાઓ તથા મહિલાઓ ની ટીમ માં કોઈ પણ 1 પ્લેયર 2 ઓવર નાખી શકશે. </li>
                   <li>વાઈડ તથા નોબોલ ના 2 રન રહેશે તથા દરેક નોબોલ પછીનો બોલ ફ્રી હિટ રહેશે.</li>
                   <li>સુપર બોલ માં જો વાઈડ અથવા નો બોલ પડશે તો 2 રન ગણાશે.</li>
                   <li>જો કોઈ બોલર ફાસ્ટ બોલ નાખશે તો અમ્પાયર નોબોલ આપી શકશે.</li>
