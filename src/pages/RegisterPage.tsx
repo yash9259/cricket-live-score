@@ -1,23 +1,23 @@
-  // Helper: category age validation
-  function isAgeValidForCategory(categoryId, age) {
-    const n = Number(age);
-    if (!Number.isInteger(n)) return false;
-    if (categoryId === "boys-11-15" || categoryId === "girls-11-15") {
-      // Age must be between 11 and 15 (inclusive)
-      return n >= 11 && n <= 15;
-    }
-    if (categoryId === "kids-5-10") {
-      // Age must be between 5 and 10 (inclusive)
-      return n >= 5 && n <= 10;
-    }
-    // Other categories: no special check
-    return true;
+// Helper: category age validation
+function isAgeValidForCategory(categoryId, age) {
+  const n = Number(age);
+  if (!Number.isInteger(n)) return false;
+  if (categoryId === "boys-11-15" || categoryId === "girls-11-15") {
+    // Age must be between 11 and 15 (inclusive)
+    return n >= 11 && n <= 15;
   }
+  if (categoryId === "kids-5-10") {
+    // Age must be between 5 and 10 (inclusive)
+    return n >= 5 && n <= 10;
+  }
+  // Other categories: no special check
+  return true;
+}
 
-  // Helper: get category label for error
-  function getCategoryLabel(categoryId) {
-    return categories.find(c => c.id === categoryId)?.label || "";
-  }
+// Helper: get category label for error
+function getCategoryLabel(categoryId) {
+  return categories.find(c => c.id === categoryId)?.label || "";
+}
 import { useState } from "react";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
@@ -54,7 +54,22 @@ export default function RegisterPage() {
   const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [utrNumber, setUtrNumber] = useState("");
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const createRegistration = useMutation(api.registrations.createRegistration);
+  const generateUploadUrl = useMutation(api.registrations.generateUploadUrl);
+
+  const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setScreenshotFile(file);
+      setScreenshotPreview(URL.createObjectURL(file));
+    } else {
+      setScreenshotFile(null);
+      setScreenshotPreview(null);
+    }
+  };
 
   const updatePlayer = (i: number, field: "name" | "age", value: string) => {
     const copy = [...players];
@@ -110,9 +125,27 @@ export default function RegisterPage() {
       setTeamValidationError("");
       setSection("payment");
     } else if (section === "payment") {
+      if (!utrNumber.trim() && !screenshotFile) {
+        setSubmitError("Please provide either a UTR Number or a Payment Screenshot.");
+        return;
+      }
+
       try {
         setSubmitError("");
         setIsSubmitting(true);
+
+        let paymentScreenshotId;
+        if (screenshotFile) {
+          const postUrl = await generateUploadUrl();
+          const result = await fetch(postUrl, {
+            method: "POST",
+            headers: { "Content-Type": screenshotFile.type },
+            body: screenshotFile,
+          });
+          const { storageId } = await result.json();
+          paymentScreenshotId = storageId;
+        }
+
         await createRegistration({
           categoryId: selectedCategory,
           categoryLabel: categories.find((c) => c.id === selectedCategory)?.label ?? "",
@@ -125,10 +158,13 @@ export default function RegisterPage() {
             age: Number(player.age),
           })),
           fee: selectedFee,
+          paymentRef: utrNumber.trim() ? utrNumber.trim() : undefined,
+          paymentScreenshotId,
           createdAt: Date.now(),
         });
         setSubmitted(true);
-      } catch {
+      } catch (error) {
+        console.error(error);
         setSubmitError("Registration save failed. Please try again.");
       } finally {
         setIsSubmitting(false);
@@ -147,7 +183,7 @@ export default function RegisterPage() {
           <CheckCircle className="h-20 w-20 text-primary mx-auto" />
           <h2 className="font-display text-4xl font-bold text-foreground">Registration Submitted!</h2>
           <p className="text-muted-foreground">Your team <span className="text-primary font-semibold">{teamName}</span> is approved and saved.</p>
-          <Button onClick={() => { setSubmitted(false); setTeamName(""); setCaptain(""); setCaptainAge(""); setPhone(""); setPlayers(Array.from({ length: 5 }, () => ({ name: "", age: "" }))); setSelectedCategory(""); setTeamValidationError(""); setSubmitError(""); setSection("rules"); }} variant="outline" className="border-primary/30 text-primary hover:bg-primary/10">
+          <Button onClick={() => { setSubmitted(false); setTeamName(""); setCaptain(""); setCaptainAge(""); setPhone(""); setPlayers(Array.from({ length: 5 }, () => ({ name: "", age: "" }))); setSelectedCategory(""); setTeamValidationError(""); setSubmitError(""); setSection("rules"); setUtrNumber(""); setScreenshotFile(null); setScreenshotPreview(null); }} variant="outline" className="border-primary/30 text-primary hover:bg-primary/10">
             Register Another Team
           </Button>
         </motion.div>
@@ -207,7 +243,6 @@ export default function RegisterPage() {
                 <p className="font-semibold text-white"></p>
                 <ul className="space-y-2 list-disc list-inside">
                   <li>એન્ટ્રી ફી ફરજિયાત ગુગલ પે (Google Pay) <span className="font-bold">9033615897</span> દ્વારા ભરવાની રહેશે.</li>
-                  <li>ફી ભર્યા બાદ તેનો સ્ક્રીનશોટ મોબાઇલ નંબર <span className="font-semibold">88661 14748 (યોગેશ મીરાણી)</span> પર ટીમ અને કેપ્ટન ના નામ સાથે Whatsapp કરવાનો રહેશે.</li>
                   <li>માત્ર ફોર્મ ભરેલું હશે અને એન્ટ્રી ફી બાકી હશે તો તે ટીમનું નામ ડ્રોમાં નાખવામાં આવશે નહિ.</li>
                   <li>ફોર્મ ભરવાની છેલ્લી તારીખ 30-04-2026 ગુરુવાર સુધી રહેશે.</li>
                 </ul>
@@ -221,12 +256,12 @@ export default function RegisterPage() {
 
                 <p className="font-bold text-white">બાળકો ની ટીમ માટે ખાસ નિયમ :</p>
                 <ul className="space-y-2 list-disc list-inside">
-                  <li>5 થી 10 વર્ષની ટીમ ના કેપ્ટને પોતાની ટીમ ના ખેલાડી ના આધાર કાર્ડ યશભાઈ એન. મીરાની  (98798 79348) નંબર પર Whatsapp કરવાના રહેશે.</li>
+                  <li>5 થી 10 વર્ષની ટીમ ના કેપ્ટને પોતાની ટીમ ના ખેલાડી ના આધાર કાર્ડ યશભાઈ એન. મીરાણી  (98798 79348) નંબર પર Whatsapp કરવાના રહેશે.</li>
                   <li>11 થી 15 વર્ષની બાળકો ની  ટીમ ના કેપ્ટને પોતાની ટીમ ના ખેલાડી ના આધાર કાર્ડ હાર્દિકભાઈ બી.આચાર્ય (99130 60111) નંબર પર Whatsapp કરવાના રહેશે.</li>
-                  <li>11 થી 15 વર્ષની બાલિકાઓ ની  ટીમ ના કેપ્ટને પોતાની ટીમ ના ખેલાડી ના આધાર કાર્ડ કપિલભાઈ આર. રૈયા  (87587 62625) નંબર પર Whatsapp કરવાના રહેશે.</li>
+                  <li>11 થી 15 વર્ષની બાલિકાઓ ની  ટીમ ના કેપ્ટને પોતાની ટીમ ના ખેલાડી ના આધાર કાર્ડ કપિલભાઈ આર. ઠક્કર  (87587 62625) નંબર પર Whatsapp કરવાના રહેશે.</li>
                 </ul>
 
-                <div className="bg-yellow-500/15 p-6 rounded-lg border-2 border-yellow-500/50 shadow-md">
+                <div className="bg--500/15 p-6 rounded-lg border-2 border-cyan-500/50 shadow-md">
                   <p className="font-semibold text-white mb-6 mt-4 text-center">વધુ માહિતી માટે પ્રોજેક્ટ ચેરમેન નો સંપર્ક કરો :</p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-x-5 text-center text-white">
                     <div>
@@ -234,15 +269,15 @@ export default function RegisterPage() {
                       <span className="font-bold">99250 41531</span>
                     </div>
                     <div>
-                      <span className="font-bold whitespace-nowrap">હાર્દિક બી આચાર્ય</span><br />
+                      <span className="font-bold whitespace-nowrap">હાર્દિક બી. આચાર્ય</span><br />
                       <span className="font-bold">9913060111</span>
                     </div>
                     <div>
-                      <span className="font-bold whitespace-nowrap">સંજય જે ઘટ્ટા</span><br />
+                      <span className="font-bold whitespace-nowrap">સંજય જે. ઘટ્ટા</span><br />
                       <span className="font-bold">9173568000</span>
                     </div>
                     <div>
-                      <span className="font-bold whitespace-nowrap">કપિલ આર ઠક્કર</span><br />
+                      <span className="font-bold whitespace-nowrap">કપિલ આર. ઠક્કર</span><br />
                       <span className="font-bold">8758762625</span>
                     </div>
                   </div>
@@ -267,11 +302,10 @@ export default function RegisterPage() {
                 {categories.map((cat, index) => (
                   <label
                     key={cat.id}
-                    className={`block p-3 rounded-lg border cursor-pointer transition-all ${
-                      selectedCategory === cat.id
-                        ? "border-primary bg-primary/10"
-                        : "border-border bg-background hover:border-primary/40"
-                    }`}
+                    className={`block p-3 rounded-lg border cursor-pointer transition-all ${selectedCategory === cat.id
+                      ? "border-primary bg-primary/10"
+                      : "border-border bg-background hover:border-primary/40"
+                      }`}
                   >
                     <div className="flex items-start gap-3">
                       <input
@@ -301,40 +335,40 @@ export default function RegisterPage() {
             <div className="space-y-4 pb-6 border-b border-border">
               <div className="space-y-2">
                 <Label htmlFor="teamName" className="font-semibold">ટીમનું નામ <span className="text-destructive">*</span> (Team Name)</Label>
-                <Input 
-                  id="teamName" 
-                  value={teamName} 
-                  onChange={(e) => setTeamName(e.target.value)} 
-                  required 
-                  className="bg-muted border-border" 
+                <Input
+                  id="teamName"
+                  value={teamName}
+                  onChange={(e) => setTeamName(e.target.value)}
+                  required
+                  className="bg-muted border-border"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="captain" className="font-semibold">કપ્તાનનું નામ <span className="text-destructive">*</span> (Captain Name)</Label>
-                  <Input 
-                    id="captain" 
-                    value={captain} 
-                    onChange={(e) => setCaptain(e.target.value)} 
-                    required 
-                    className="bg-muted border-border" 
+                  <Input
+                    id="captain"
+                    value={captain}
+                    onChange={(e) => setCaptain(e.target.value)}
+                    required
+                    className="bg-muted border-border"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone" className="font-semibold">ફોન નંબર <span className="text-destructive">*</span> (Phone Number)</Label>
-                  <Input 
-                    id="phone" 
+                  <Input
+                    id="phone"
                     type="tel"
-                    value={phone} 
+                    value={phone}
                     onChange={(e) => {
                       const numOnly = e.target.value.replace(/\D/g, '').slice(0, 10);
                       setPhone(numOnly);
                     }}
                     maxLength={10}
                     pattern="[0-9]{10}"
-                    required 
-                    className="bg-muted border-border" 
+                    required
+                    className="bg-muted border-border"
                   />
                   {phone && phone.length < 10 && (
                     <p className="text-xs text-orange-600">10 આંકડા જરૂરી છે</p>
@@ -366,7 +400,7 @@ export default function RegisterPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <Label htmlFor={`player-name-${i}`} className="text-xs font-semibold">ખેલાડીનું નામ <span className="text-destructive">*</span></Label>
-                      <Input 
+                      <Input
                         id={`player-name-${i}`}
                         value={player.name}
                         onChange={(e) => updatePlayer(i, "name", e.target.value)}
@@ -399,10 +433,10 @@ export default function RegisterPage() {
             </div>
 
             <div className="flex gap-3">
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="lg" 
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
                 className="flex-1 border-primary/30 text-primary hover:bg-primary/10"
                 onClick={() => setSection("rules")}
               >
@@ -429,7 +463,7 @@ export default function RegisterPage() {
             </div>
 
             {selectedCategory && (
-              <motion.div 
+              <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-primary/10 border border-primary/30 rounded-lg p-6 space-y-4"
@@ -440,9 +474,9 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="bg-white p-4 rounded-lg flex justify-center">
-                  <img 
+                  <img
                     src={qrCodeSrc}
-                    alt="UPI QR Code" 
+                    alt="UPI QR Code"
                     className="h-48 w-48"
                   />
                 </div>
@@ -455,11 +489,37 @@ export default function RegisterPage() {
                     rel="noopener noreferrer"
                     className="inline-block px-6 py-3 bg-green-600 text-white font-bold rounded-lg shadow hover:bg-green-700 transition-colors text-lg"
                   >
-                    Click here and open QR code 
+                    Click here and open QR code
                   </a>
                 </div>
 
-                
+                <div className="mt-6 space-y-4 pt-4 border-t border-primary/20">
+                  <h3 className="font-display font-semibold text-foreground text-lg text-center">Payment Verification</h3>
+                  <p className="text-sm text-center text-primary/80 mb-4 font-semibold">Please provide the UTR Number OR Upload a Screenshot of your payment (You can provide both).</p>
+
+                  <div className="space-y-4 bg-background p-4 rounded-lg border border-primary/20">
+                    <div className="space-y-2">
+
+
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="screenshot" className="font-semibold text-foreground">Payment કર્યા પછી Screenshot અહીં ઉપલોડ કરો </Label>
+                      <Input
+                        id="screenshot"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleScreenshotChange}
+                        className="bg-background border-primary/30 cursor-pointer"
+                      />
+                      {screenshotPreview && (
+                        <div className="mt-4 flex justify-center bg-muted/30 p-2 rounded-lg">
+                          <img src={screenshotPreview} alt="Screenshot Preview" className="max-h-48 rounded border border-border object-contain shadow-sm" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
 
                 <div className="bg-red-500/20 border-2 border-red-600 rounded-lg p-6 shadow-lg">
                   <div className="flex gap-3 items-start">
@@ -476,19 +536,19 @@ export default function RegisterPage() {
             )}
 
             <div className="flex gap-3">
-              <Button 
-                type="button" 
-                variant="outline" 
-                size="lg" 
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
                 className="flex-1 border-primary/30 text-primary hover:bg-primary/10"
                 onClick={() => setSection("team")}
               >
-                Back 
+                Back
               </Button>
-              <Button 
-                type="submit" 
-                size="lg" 
-                disabled={!selectedCategory || isSubmitting}
+              <Button
+                type="submit"
+                size="lg"
+                disabled={!selectedCategory || isSubmitting || (!utrNumber.trim() && !screenshotFile)}
                 className="flex-1 font-display text-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? "Saving..." : "Submit"}

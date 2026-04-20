@@ -47,6 +47,14 @@ export default defineSchema({
     .index("by_createdAt", ["createdAt"])
     .index("by_phone", ["phone"]),
 
+  adminSessions: defineTable({
+    token: v.string(),
+    email: v.string(),
+    createdAt: v.number(),
+    lastSeenAt: v.number(),
+    expiresAt: v.number(),
+  }).index("by_token", ["token"]),
+
   settings: defineTable({
     key: v.string(),
     registrationOnlyMode: v.boolean(),
