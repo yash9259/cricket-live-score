@@ -224,7 +224,7 @@ export default function RegisterPage() {
             <div>
               <h2 className="font-display text-2xl font-bold text-white mb-4">બોક્સ ક્રિકેટ ના નિયમો</h2>
               <div className="space-y-4 text-sm leading-relaxed text-white">
-                <p className="font-semibold text-white">⚠️ વહેલા તે પહેલા ના ધોરણે ફોર્મ સ્વીકારવા માં આવશે ફોર્મ ભરવા ની અંતિમ તારીખ <span className="font-bold">30-04-2026 રહેશે <br /></span> મર્યાદિત ટીમો લેવાની હોવાથી  <br></br>30-04-2026 પહેલા પણ રજીસ્ટ્રેશન ફોર્મ બંધ થઈ શકે છે.</p>
+                <p className="font-semibold text-white">⚠️ વહેલા તે પહેલા ના ધોરણે ફોર્મ સ્વીકારવા માં આવશે ફોર્મ ભરવા ની અંતિમ તારીખ <span className="font-bold">30-04-2026 રહેશે </span> મર્યાદિત ટીમો લેવાની હોવાથી  <br></br>30-04-2026 પહેલા પણ રજીસ્ટ્રેશન ફોર્મ બંધ થઈ શકે છે.</p>
                 <p></p>
 
                 <ul className="space-y-3 list-disc list-inside">
