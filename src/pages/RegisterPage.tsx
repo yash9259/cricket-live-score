@@ -27,6 +27,7 @@ import { api } from "../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/use-toast";
 
 const categories = [
   { id: "youth", label: "યુવાનો 16 વર્ષ થી ઉપરના", fee: 1500 },
@@ -41,7 +42,6 @@ const ageOptions = Array.from({ length: 99 }, (_, i) => i + 1);
 export default function RegisterPage() {
   const [section, setSection] = useState<"rules" | "team" | "payment">("rules");
   // Toast
-  const { toast } = require("@/components/ui/use-toast");
   // Scroll to top on section change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
