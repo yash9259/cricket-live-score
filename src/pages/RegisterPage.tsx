@@ -234,7 +234,7 @@ export default function RegisterPage() {
                   <li>આ સમગ્ર બોક્સ ક્રિકેટ ટુર્નામેન્ટ પાંચ અલગ અલગ વિભાગમાં મેચ રમાડવામાં આવશે.</li>
                   <li>દરેક મેચ 6 ઓવરની રહેશે જેમાં દરેક ઓવર નો છેલ્લો બોલ સુપર બોલ રહેશે.</li>
                   <li>એક ખેલાડી એક જ ટીમમાં ભાગ લઈ શકશે.</li>
-                  <li>11 થી 15 વર્ષના બાળકો તથા 16 વર્ષથી વધુ ઉંમર  ખેલાડી એક જ ઓવર નાખી શકશે.</li>
+                  <li>11 થી 15 વર્ષના બાળકો તથા યુવાનો માં કોઈ પણ 1 પ્લેયર 1 જ ઓવર નાખી શકશે.  </li>
                   <li>5 થી 10 વર્ષના બાળકો,11 થી 15 વર્ષની બાલિકાઓ તથા મહિલાઓ ની ટીમ માં કોઈ પણ 1 પ્લેયર 2 ઓવર નાખી શકશે. </li>
                   <li>વાઈડ તથા નોબોલ ના 2 રન રહેશે તથા દરેક નોબોલ પછીનો બોલ ફ્રી હિટ રહેશે.</li>
                   <li>સુપર બોલ માં જો વાઈડ અથવા નો બોલ પડશે તો 2 રન ગણાશે.</li>
@@ -557,7 +557,7 @@ export default function RegisterPage() {
         {/* Screenshot Alert Modal */}
         {showScreenshotAlert && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               className="bg-card border border-border rounded-xl shadow-2xl max-w-sm w-full overflow-hidden"
@@ -568,8 +568,8 @@ export default function RegisterPage() {
                 </div>
                 <h3 className="font-display text-2xl font-bold text-foreground">Screenshot Required</h3>
                 <p className="text-lg text-muted-foreground font-semibold">તમારા payment નો screenshort add કરો</p>
-                <Button 
-                  onClick={() => setShowScreenshotAlert(false)} 
+                <Button
+                  onClick={() => setShowScreenshotAlert(false)}
                   size="lg"
                   className="w-full mt-4 font-display text-lg"
                 >
