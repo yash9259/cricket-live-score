@@ -244,7 +244,7 @@ export default function RegisterPage() {
                 <ul className="space-y-2 list-disc list-inside">
                   <li>એન્ટ્રી ફી ફરજિયાત ગુગલ પે (Google Pay) <span className="font-bold">9033615897</span> દ્વારા ભરવાની રહેશે.</li>
                   <li>માત્ર ફોર્મ ભરેલું હશે અને એન્ટ્રી ફી બાકી હશે તો તે ટીમનું નામ ડ્રોમાં નાખવામાં આવશે નહિ.</li>
-                  <li>ફોર્મ ભરવાની છેલ્લી તારીખ 30-04-2026 ગુરુવાર સુધી રહેશે.</li>
+
                 </ul>
 
                 <p className="font-semibold text-white"></p>
