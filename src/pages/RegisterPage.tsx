@@ -54,6 +54,7 @@ export default function RegisterPage() {
   const [submitError, setSubmitError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [showScreenshotAlert, setShowScreenshotAlert] = useState(false);
   const [utrNumber, setUtrNumber] = useState("");
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
@@ -125,8 +126,8 @@ export default function RegisterPage() {
       setTeamValidationError("");
       setSection("payment");
     } else if (section === "payment") {
-      if (!utrNumber.trim() && !screenshotFile) {
-        setSubmitError("Please provide either a UTR Number or a Payment Screenshot.");
+      if (!screenshotFile) {
+        setShowScreenshotAlert(true);
         return;
       }
 
@@ -256,9 +257,9 @@ export default function RegisterPage() {
 
                 <p className="font-bold text-white">બાળકો ની ટીમ માટે ખાસ નિયમ :</p>
                 <ul className="space-y-2 list-disc list-inside">
-                  <li>5 થી 10 વર્ષની ટીમ ના કેપ્ટને પોતાની ટીમ ના દરેક ખેલાડી ના આધાર કાર્ડ એક સાથે યશભાઈ એન. મીરાણી ના નંબર 98798 79348 પર Whatsapp કરવાના રહેશે.</li>
-                  <li>11 થી 15 વર્ષની બાળકો ની  ટીમ ના કેપ્ટને પોતાની ટીમ ના દરેક ખેલાડી ના આધાર કાર્ડ એક સાથે હાર્દિકભાઈ બી.આચાર્ય ના નંબર 99130 60111  પર Whatsapp કરવાના રહેશે.</li>
-                  <li>11 થી 15 વર્ષની બાલિકાઓ ની  ટીમ ના કેપ્ટને પોતાની ટીમ ના દરેક ખેલાડી ના આધાર કાર્ડ એક સાથે કપિલભાઈ આર. ઠક્કર ના નંબર 87587 62625  પર Whatsapp કરવાના રહેશે.</li>
+                  <li>5 થી 10 વર્ષની ટીમ ના કેપ્ટને પોતાની ટીમ ના દરેક ખેલાડી ના આધાર કાર્ડ એક સાથે યશભાઈ એન. મીરાણી ના નંબર <span className="font-bold">98798 79348</span> પર Whatsapp કરવાના રહેશે.</li>
+                  <li>11 થી 15 વર્ષની બાળકો ની  ટીમ ના કેપ્ટને પોતાની ટીમ ના દરેક ખેલાડી ના આધાર કાર્ડ એક સાથે હાર્દિકભાઈ બી.આચાર્ય ના નંબર <span className="font-bold">99130 60111</span> પર Whatsapp કરવાના રહેશે.</li>
+                  <li>11 થી 15 વર્ષની બાલિકાઓ ની  ટીમ ના કેપ્ટને પોતાની ટીમ ના દરેક ખેલાડી ના આધાર કાર્ડ એક સાથે કપિલભાઈ આર. ઠક્કર ના નંબર <span className="font-bold">87587 62625</span> પર Whatsapp કરવાના રહેશે.</li>
                 </ul>
 
                 <div className="bg--500/15 p-6 rounded-lg border-2 border-cyan-500/50 shadow-md">
@@ -489,7 +490,7 @@ export default function RegisterPage() {
                     rel="noopener noreferrer"
                     className="inline-block px-6 py-3 bg-green-600 text-white font-bold rounded-lg shadow hover:bg-green-700 transition-colors text-lg"
                   >
-                    Click here and open QR code
+                    payment કરવા માટે અહીં click કરો
                   </a>
                 </div>
 
@@ -521,17 +522,7 @@ export default function RegisterPage() {
                   </div>
                 </div>
 
-                <div className="bg-red-500/20 border-2 border-red-600 rounded-lg p-6 shadow-lg">
-                  <div className="flex gap-3 items-start">
-                    <AlertCircle className="h-6 w-6 text-red-600 shrink-0 mt-1 animate-pulse" />
-                    <div className="flex-1">
-                      <p className="text-lg font-bold text-white mb-2">⭐ ખાશ નોંધ </p>
-                      <p className="text-base font-semibold text-white leading-relaxed">
-                        google pay માં paymant કર્યા  બાદ તેનો સ્ક્રીનશોટ નીચે આપેલ નંબર ટીમ ના નામ સાથે <br></br><span className="font-display text-lg bg-red-600/30 px-2 py-1 rounded">88661 14748</span> (યોગેશ મીરાણી) પર WhatsApp કરવા નો રહશે.
-                      </p>
-                    </div>
-                  </div>
-                </div>
+
               </motion.div>
             )}
 
@@ -548,7 +539,7 @@ export default function RegisterPage() {
               <Button
                 type="submit"
                 size="lg"
-                disabled={!selectedCategory || isSubmitting || (!utrNumber.trim() && !screenshotFile)}
+                disabled={!selectedCategory || isSubmitting}
                 className="flex-1 font-display text-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? "Saving..." : "Submit"}
@@ -561,6 +552,32 @@ export default function RegisterPage() {
               </div>
             )}
           </motion.form>
+        )}
+
+        {/* Screenshot Alert Modal */}
+        {showScreenshotAlert && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              className="bg-card border border-border rounded-xl shadow-2xl max-w-sm w-full overflow-hidden"
+            >
+              <div className="p-6 flex flex-col items-center text-center space-y-4">
+                <div className="bg-red-500/20 p-4 rounded-full">
+                  <AlertCircle className="h-12 w-12 text-red-500" />
+                </div>
+                <h3 className="font-display text-2xl font-bold text-foreground">Screenshot Required</h3>
+                <p className="text-lg text-muted-foreground font-semibold">તમારા payment નો screenshort add કરો</p>
+                <Button 
+                  onClick={() => setShowScreenshotAlert(false)} 
+                  size="lg"
+                  className="w-full mt-4 font-display text-lg"
+                >
+                  OK
+                </Button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </motion.div>
     </div>
