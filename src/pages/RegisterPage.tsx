@@ -175,7 +175,7 @@ export default function RegisterPage() {
 
         <div className="mb-8 overflow-hidden rounded-xl border border-border bg-card">
           <img
-            src="/formbanner.jpeg"
+            src="/top.jpeg"
             alt="Registration form banner"
             className="h-auto w-full object-cover"
             loading="lazy"

@@ -16,6 +16,8 @@ export const createRegistration = mutation({
       }),
     ),
     fee: v.number(),
+    paymentRef: v.optional(v.string()),
+    paymentScreenshotId: v.optional(v.id("_storage")),
     createdAt: v.number(),
   },
   handler: async (ctx, args) => {

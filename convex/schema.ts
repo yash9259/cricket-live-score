@@ -19,6 +19,8 @@ export default defineSchema({
         ),
         fee: v.number(),
         paymentStatus: v.union(v.literal("pending"), v.literal("paid")),
+        paymentRef: v.optional(v.string()),
+        paymentScreenshotId: v.optional(v.id("_storage")),
         createdAt: v.number(),
       }),
       v.object({
@@ -36,6 +38,8 @@ export default defineSchema({
         ),
         fee: v.number(),
         paymentStatus: v.union(v.literal("pending"), v.literal("paid")),
+        paymentRef: v.optional(v.string()),
+        paymentScreenshotId: v.optional(v.id("_storage")),
         createdAt: v.number(),
       }),
     ),
