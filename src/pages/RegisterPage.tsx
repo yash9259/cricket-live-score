@@ -256,13 +256,13 @@ export default function RegisterPage() {
 
                 <p className="font-bold text-white">બાળકો ની ટીમ માટે ખાસ નિયમ :</p>
                 <ul className="space-y-2 list-disc list-inside">
-                  <li>5 થી 10 વર્ષની ટીમ ના કેપ્ટને પોતાની ટીમ ના ખેલાડી ના આધાર કાર્ડ યશભાઈ એન. મીરાણી  (98798 79348) નંબર પર Whatsapp કરવાના રહેશે.</li>
-                  <li>11 થી 15 વર્ષની બાળકો ની  ટીમ ના કેપ્ટને પોતાની ટીમ ના ખેલાડી ના આધાર કાર્ડ હાર્દિકભાઈ બી.આચાર્ય (99130 60111) નંબર પર Whatsapp કરવાના રહેશે.</li>
-                  <li>11 થી 15 વર્ષની બાલિકાઓ ની  ટીમ ના કેપ્ટને પોતાની ટીમ ના ખેલાડી ના આધાર કાર્ડ કપિલભાઈ આર. ઠક્કર  (87587 62625) નંબર પર Whatsapp કરવાના રહેશે.</li>
+                  <li>5 થી 10 વર્ષની ટીમ ના કેપ્ટને પોતાની ટીમ ના દરેક ખેલાડી ના આધાર કાર્ડ એક સાથે યશભાઈ એન. મીરાણી ના નંબર 98798 79348 પર Whatsapp કરવાના રહેશે.</li>
+                  <li>11 થી 15 વર્ષની બાળકો ની  ટીમ ના કેપ્ટને પોતાની ટીમ ના દરેક ખેલાડી ના આધાર કાર્ડ એક સાથે હાર્દિકભાઈ બી.આચાર્ય ના નંબર 99130 60111  પર Whatsapp કરવાના રહેશે.</li>
+                  <li>11 થી 15 વર્ષની બાલિકાઓ ની  ટીમ ના કેપ્ટને પોતાની ટીમ ના દરેક ખેલાડી ના આધાર કાર્ડ એક સાથે કપિલભાઈ આર. ઠક્કર ના નંબર 87587 62625  પર Whatsapp કરવાના રહેશે.</li>
                 </ul>
 
                 <div className="bg--500/15 p-6 rounded-lg border-2 border-cyan-500/50 shadow-md">
-                  <p className="font-semibold text-white mb-6 mt-4 text-center">વધુ માહિતી માટે પ્રોજેક્ટ ચેરમેન નો સંપર્ક કરો :</p>
+                  <p className="font-semibold text-white mb-6 mt-4 text-center">વધુ માહિતી માટે પ્રોજેક્ટ ચેરમેન શ્રી નો સંપર્ક કરો :</p>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-x-5 text-center text-white">
                     <div>
                       <span className="font-bold whitespace-nowrap">નરેન એચ. મીરાણી</span><br />
@@ -270,15 +270,15 @@ export default function RegisterPage() {
                     </div>
                     <div>
                       <span className="font-bold whitespace-nowrap">હાર્દિક બી. આચાર્ય</span><br />
-                      <span className="font-bold">9913060111</span>
+                      <span className="font-bold">99130 60111</span>
                     </div>
                     <div>
                       <span className="font-bold whitespace-nowrap">સંજય જે. ઘટ્ટા</span><br />
-                      <span className="font-bold">9173568000</span>
+                      <span className="font-bold">91735 68000</span>
                     </div>
                     <div>
                       <span className="font-bold whitespace-nowrap">કપિલ આર. ઠક્કર</span><br />
-                      <span className="font-bold">8758762625</span>
+                      <span className="font-bold">87587 62625</span>
                     </div>
                   </div>
                 </div>
