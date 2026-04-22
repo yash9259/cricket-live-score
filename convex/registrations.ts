@@ -38,7 +38,19 @@ export const createRegistration = mutation({
 export const listRegistrations = query({
   args: {},
   handler: async (ctx) => {
-    return await ctx.db.query("registrations").withIndex("by_createdAt").order("desc").take(200);
+    const registrations = await ctx.db.query("registrations").withIndex("by_createdAt").order("desc").take(200);
+    return await Promise.all(
+      registrations.map(async (reg) => {
+        let paymentScreenshotUrl = null;
+        if (reg.paymentScreenshotId) {
+          paymentScreenshotUrl = await ctx.storage.getUrl(reg.paymentScreenshotId);
+        }
+        return {
+          ...reg,
+          paymentScreenshotUrl,
+        };
+      })
+    );
   },
 });
 

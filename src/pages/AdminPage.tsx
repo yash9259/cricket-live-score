@@ -20,8 +20,15 @@ type Tab = "overview" | "registrations" | "control";
 export default function AdminPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [tab, setTab] = useState<Tab>("overview");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   const [expandedTeamId, setExpandedTeamId] = useState<string | null>(null);
+
+  const handleTabSelect = (id: Tab) => {
+    setTab(id);
+    if (window.innerWidth <= 768) {
+      setIsSidebarOpen(false);
+    }
+  };
 
   const registrations = useQuery(api.registrations.listRegistrations) ?? [];
   const stats = useQuery(api.registrations.registrationStats);
@@ -109,6 +116,19 @@ export default function AdminPage() {
   return (
     <div className="flex h-screen bg-background text-foreground overflow-hidden font-sans">
       
+      {/* Mobile Overlay */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/60 z-20 md:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Sidebar */}
       <AnimatePresence>
         {isSidebarOpen && (
@@ -116,7 +136,7 @@ export default function AdminPage() {
             initial={{ width: 0, opacity: 0 }}
             animate={{ width: 260, opacity: 1 }}
             exit={{ width: 0, opacity: 0 }}
-            className="h-full border-r border-border bg-card flex flex-col z-20 shrink-0"
+            className="absolute md:relative h-full border-r border-border bg-card flex flex-col z-30 shrink-0 shadow-2xl md:shadow-none"
           >
             <div className="p-6 flex items-center gap-3">
               <div className="bg-primary/20 p-2 rounded-lg text-primary">
@@ -130,7 +150,7 @@ export default function AdminPage() {
               {sidebarLinks.map((link) => (
                 <button
                   key={link.id}
-                  onClick={() => setTab(link.id as Tab)}
+                  onClick={() => handleTabSelect(link.id as Tab)}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium ${
                     tab === link.id 
                       ? "bg-primary/10 text-primary" 
@@ -170,7 +190,7 @@ export default function AdminPage() {
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
         
         {/* Top Header */}
-        <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6 shrink-0 z-10">
+        <header className="h-16 border-b border-border bg-card flex items-center justify-between px-4 sm:px-6 shrink-0 z-10">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -178,12 +198,12 @@ export default function AdminPage() {
             >
               <Menu className="h-5 w-5" />
             </button>
-            <h2 className="font-display font-bold text-lg hidden sm:block capitalize">
+            <h2 className="font-display font-bold text-lg capitalize">
               {tab === "overview" ? "Admin Dashboard" : tab}
             </h2>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <div className="relative hidden md:block w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
@@ -208,7 +228,7 @@ export default function AdminPage() {
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 max-w-7xl mx-auto">
               
               {/* Stat Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard label="Total Teams" value={stats?.total ?? 0} icon={Users} trend="Up" />
                 <StatCard label="Approved Players" value={(stats?.paid ?? 0) * 6} icon={UserCheck} trend="Live" />
                 <StatCard label="Total Revenue" value={`₹${totalRevenue}`} icon={Wallet} trend="Live" />
@@ -321,7 +341,7 @@ export default function AdminPage() {
 
               <div className="rounded-xl border border-border bg-card overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="w-full text-sm min-w-[800px]">
                     <thead>
                       <tr className="border-b border-border bg-muted/20 text-left">
                         <th className="p-4 font-semibold text-muted-foreground uppercase text-xs tracking-wider">Team Details</th>
@@ -386,6 +406,27 @@ export default function AdminPage() {
                                               <span className="font-bold">{player.name}</span>
                                             </div>
                                           ))}
+                                        </div>
+
+                                        <p className="text-xs uppercase font-bold text-muted-foreground mt-6 mb-3">Payment Details</p>
+                                        <div className="bg-background border border-border rounded-lg p-4 shadow-sm space-y-4">
+                                          {"paymentRef" in row && (row as any).paymentRef && (
+                                            <div>
+                                              <span className="text-muted-foreground text-xs font-semibold block mb-1">UTR / Reference Number</span>
+                                              <span className="font-bold font-mono bg-muted/50 px-2 py-1 rounded inline-block">{(row as any).paymentRef}</span>
+                                            </div>
+                                          )}
+                                          {"paymentScreenshotUrl" in row && (row as any).paymentScreenshotUrl && (
+                                            <div>
+                                              <span className="text-muted-foreground text-xs font-semibold block mb-2">Payment Screenshot</span>
+                                              <a href={(row as any).paymentScreenshotUrl} target="_blank" rel="noreferrer">
+                                                <img src={(row as any).paymentScreenshotUrl} alt="Payment Screenshot" className="max-w-xs max-h-48 rounded-lg border border-border shadow-sm hover:opacity-90 transition-opacity object-contain" />
+                                              </a>
+                                            </div>
+                                          )}
+                                          {(!("paymentRef" in row) || !(row as any).paymentRef) && (!("paymentScreenshotUrl" in row) || !(row as any).paymentScreenshotUrl) && (
+                                            <div className="text-sm text-muted-foreground italic">No payment details provided.</div>
+                                          )}
                                         </div>
                                       </div>
                                     </motion.div>
