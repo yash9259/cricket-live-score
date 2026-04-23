@@ -34,7 +34,7 @@ export default function AdminPage() {
   const [expandedTeamId, setExpandedTeamId] = useState<string | null>(null);
 
   // Validate session on mount and every 1 minute
-  const validateSession = useQuery(api.adminAuth.validateSession, isLoggedIn ? { token: localStorage.getItem("adminToken") || "" } : undefined);
+  const validateSession = useQuery(api.adminAuth.validateSession, isLoggedIn ? { token: localStorage.getItem("adminToken") || "" } : "skip");
 
   // Auto-logout if session expired
   if (isLoggedIn && validateSession && !validateSession.authenticated) {

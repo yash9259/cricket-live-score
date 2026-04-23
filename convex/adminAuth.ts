@@ -94,9 +94,17 @@ export const logout = mutation({
 
 export const validateSession = query({
   args: {
-    token: v.string(),
+    token: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    if (!args.token) {
+      return {
+        authenticated: false,
+        email: null,
+        expiresAt: null,
+      } as const;
+    }
+
     const session = await getValidSession(ctx, args.token);
 
     if (!session) {

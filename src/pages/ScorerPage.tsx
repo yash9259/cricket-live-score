@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const ADMIN_SESSION_STORAGE_KEY = "adminSessionToken";
+const ADMIN_SESSION_STORAGE_KEY = "adminToken";
 
 const defaultState = {
   battingTeam: "Team A",
