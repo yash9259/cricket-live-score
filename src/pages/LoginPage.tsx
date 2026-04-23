@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 interface Props {
-  onLogin: (token: string) => void;
+  onLogin: (token: string, expiresAt: number) => void;
 }
 
 export default function LoginPage({ onLogin }: Props) {
@@ -25,7 +25,7 @@ export default function LoginPage({ onLogin }: Props) {
       setIsSubmitting(true);
       const result = await login({ email, password });
       if (result.success && result.token) {
-        onLogin(result.token);
+        onLogin(result.token, result.expiresAt);
         return;
       }
       setError(result.message);

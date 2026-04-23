@@ -17,11 +17,31 @@ import {
 
 type Tab = "overview" | "registrations" | "control";
 
+
 export default function AdminPage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    const token = localStorage.getItem("adminToken");
+    const expiresAt = Number(localStorage.getItem("adminExpiresAt"));
+    if (token && expiresAt && Date.now() < expiresAt) {
+      return true;
+    }
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminExpiresAt");
+    return false;
+  });
   const [tab, setTab] = useState<Tab>("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   const [expandedTeamId, setExpandedTeamId] = useState<string | null>(null);
+
+  // Validate session on mount and every 1 minute
+  const validateSession = useQuery(api.adminAuth.validateSession, isLoggedIn ? { token: localStorage.getItem("adminToken") || "" } : undefined);
+
+  // Auto-logout if session expired
+  if (isLoggedIn && validateSession && !validateSession.authenticated) {
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminExpiresAt");
+    setIsLoggedIn(false);
+  }
 
   const handleTabSelect = (id: Tab) => {
     setTab(id);
@@ -98,8 +118,13 @@ export default function AdminPage() {
     URL.revokeObjectURL(url);
   };
 
+
   if (!isLoggedIn) {
-    return <LoginPage onLogin={() => setIsLoggedIn(true)} />;
+    return <LoginPage onLogin={(token: string, expiresAt: number) => {
+      localStorage.setItem("adminToken", token);
+      localStorage.setItem("adminExpiresAt", String(expiresAt));
+      setIsLoggedIn(true);
+    }} />;
   }
 
   const sidebarLinks = [
@@ -175,7 +200,11 @@ export default function AdminPage() {
 
             <div className="p-4 border-t border-border">
               <button 
-                onClick={() => setIsLoggedIn(false)}
+                onClick={() => {
+                  localStorage.removeItem("adminToken");
+                  localStorage.removeItem("adminExpiresAt");
+                  setIsLoggedIn(false);
+                }}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium text-destructive hover:bg-destructive/10"
               >
                 <LogOut className="h-5 w-5" />
