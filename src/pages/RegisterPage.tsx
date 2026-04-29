@@ -85,7 +85,7 @@ export default function RegisterPage() {
   const selectedFee = categories.find(c => c.id === selectedCategory)?.fee || 0;
   // Add note to UPI payment URL (only team name)
   const upiNote = teamName && teamName.trim() ? teamName.trim() : "team";
-  const upiPaymentUrl = `upi://pay?pa=9033615897@upi&pn=VRP Box Cricket&am=${selectedFee}&cu=INR&tn=${encodeURIComponent(upiNote)}`;
+  const upiPaymentUrl = `upi://pay?pa=9173568000@upi&pn=Sanju Thakkar&am=${selectedFee}&cu=INR&tn=${encodeURIComponent(upiNote)}`;
   const qrCodeSrc = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiPaymentUrl)}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -259,7 +259,7 @@ export default function RegisterPage() {
 
                 <p className="font-semibold text-white"></p>
                 <ul className="space-y-2 list-disc list-inside">
-                  <li>એન્ટ્રી ફી ફરજિયાત ગુગલ પે (Google Pay) <span className="font-bold">9033615897</span> દ્વારા ભરવાની રહેશે.</li>
+                  <li>એન્ટ્રી ફી ફરજિયાત ગુગલ પે (Google Pay) <span className="font-bold">9173568000</span> દ્વારા ભરવાની રહેશે.</li>
                   <li>માત્ર ફોર્મ ભરેલું હશે અને એન્ટ્રી ફી બાકી હશે તો તે ટીમનું નામ ડ્રોમાં નાખવામાં આવશે નહિ.</li>
 
                 </ul>
@@ -504,16 +504,10 @@ export default function RegisterPage() {
                   />
                 </div>
 
-                {/* Pay Now Button */}
-                <div className="flex justify-center mt-4">
-                  <a
-                    href={upiPaymentUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block px-6 py-3 bg-green-600 text-white font-bold rounded-lg shadow hover:bg-green-700 transition-colors text-lg"
-                  >
-                    payment કરવા માટે અહીં click કરો
-                  </a>
+                <div className="text-center mt-4 space-y-2">
+                  <p className="text-xl font-bold text-foreground">
+                    pay on this number <span className="text-primary">9173568000</span> sanju thakkar
+                  </p>
                 </div>
 
                 <div className="mt-6 space-y-4 pt-4 border-t border-primary/20">
