@@ -4,7 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   LogOut, Radio, Settings, Users, Wallet, Menu, Bell, Search, 
-  LayoutDashboard, FileText, BarChart3, ChevronRight, Activity, UserCheck
+  LayoutDashboard, FileText, BarChart3, ChevronRight, Activity, UserCheck, Trash2
 } from "lucide-react";
 import { api } from "../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
@@ -15,10 +15,26 @@ import {
   ResponsiveContainer, LineChart, Line 
 } from "recharts";
 
-type Tab = "overview" | "registrations" | "control";
+type Tab = "overview" | "registrations" | "matches" | "control";
+
+const ADMIN_SESSION_STORAGE_KEY = "adminSessionToken";
 
 export default function AdminPage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [sessionToken, setSessionToken] = useState(() => localStorage.getItem(ADMIN_SESSION_STORAGE_KEY) ?? "");
+  const session = useQuery(api.adminAuth.validateSession, sessionToken ? { token: sessionToken } : "skip");
+  
+  const isLoggedIn = sessionToken !== "" && session?.authenticated === true;
+
+  const handleLogin = (token: string) => {
+    localStorage.setItem(ADMIN_SESSION_STORAGE_KEY, token);
+    setSessionToken(token);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
+    setSessionToken("");
+  };
+
   const [tab, setTab] = useState<Tab>("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   const [expandedTeamId, setExpandedTeamId] = useState<string | null>(null);
@@ -35,6 +51,27 @@ export default function AdminPage() {
   const settings = useQuery(api.settings.getPublicSettings);
   const liveScore = useQuery(api.liveScore.getCurrent);
   const setRegistrationOnlyMode = useMutation(api.settings.setRegistrationOnlyMode);
+  
+  const matches = useQuery(api.matches.list) ?? [];
+  const generateAutoMatches = useMutation(api.matches.generateAutomatic);
+  const createManualMatch = useMutation(api.matches.createManual);
+  const deleteMatch = useMutation(api.matches.deleteMatch);
+  const deleteAllScheduled = useMutation(api.matches.deleteAllScheduled);
+  const startMatch = useMutation(api.matches.startMatch);
+  const importMatches = useMutation(api.matches.createMany);
+
+  const [selectedMatchCategory, setSelectedMatchCategory] = useState("");
+  const [teamAId, setTeamAId] = useState("");
+  const [teamBId, setTeamBId] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const categories = [
+    { id: "youth", label: "યુવાનો 16 વર્ષ થી ઉપરના" },
+    { id: "women", label: "મહિલાઓ તથા 16 વર્ષ થી વધુ ઉંમર ની યુવતીઓ" },
+    { id: "boys-11-15", label: "બાળકો (11 થી 15 વર્ષ)" },
+    { id: "girls-11-15", label: "બાલિકાઓ (11 થી 15 વર્ષ)" },
+    { id: "kids-5-10", label: "બાળકો તથા બાલિકાઓ (5 થી 10 વર્ષ)" },
+  ];
 
   const isRegistrationOnlyMode = settings?.registrationOnlyMode ?? false;
 
@@ -73,7 +110,11 @@ export default function AdminPage() {
   const totalRevenue = registrations.reduce((acc, curr) => acc + curr.fee, 0);
 
   const exportRegistrationsCsv = () => {
-    const headers = ["Team Name", "Captain", "Phone", "Category", "Fee", "Status", "Captain Age", "Players", "Created At"];
+    // Find max players to set headers
+    const maxPlayers = Math.max(...registrations.map(r => r.players.length), 0);
+    const playerHeaders = Array.from({ length: maxPlayers }, (_, i) => `Player ${i + 2}`);
+    
+    const headers = ["Team Name", "Captain", "Phone", "Category", "Fee", "Status", "Captain Age", ...playerHeaders];
     const escapeCsv = (value: string | number) => {
       const str = String(value ?? "");
       return `"${str.replace(/"/g, '""')}"`;
@@ -81,11 +122,23 @@ export default function AdminPage() {
 
     const rows = registrations.map((row) => {
       const captainAge = "captainAge" in row ? String((row as any).captainAge) : "";
-      const players = row.players.map((p, i) => {
-          const ageOrDob = "age" in (p as any) ? `${(p as any).age}y` : (p as any).dob;
-          return `${i + 2}. ${p.name} (${ageOrDob})`;
-        }).join(" | ");
-      return [row.teamName, row.captainName, row.phone, row.categoryLabel, row.fee, "approved", captainAge, players, new Date(row.createdAt).toLocaleString()];
+      const playerCols = row.players.map(p => `${p.name} (${"age" in (p as any) ? (p as any).age + 'y' : (p as any).dob})`);
+      
+      // Fill empty columns if this team has fewer players than the max
+      while (playerCols.length < maxPlayers) {
+        playerCols.push("");
+      }
+
+      return [
+        row.teamName, 
+        row.captainName, 
+        row.phone, 
+        row.categoryLabel, 
+        row.fee, 
+        "approved", 
+        captainAge, 
+        ...playerCols
+      ];
     });
 
     const csv = [headers, ...rows].map((line) => line.map(escapeCsv).join(",")).join("\n");
@@ -93,18 +146,123 @@ export default function AdminPage() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `registrations-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `teams-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(url);
   };
 
+  const exportMatchesCsv = () => {
+    const headers = ["Team A", "Captain A", "Phone A", "Team B", "Captain B", "Phone B", "Category", "Status", "Created At"];
+    const escapeCsv = (value: string | number) => {
+      const str = String(value ?? "");
+      return `"${str.replace(/"/g, '""')}"`;
+    };
+
+    const rows = matches.map((m) => [
+      m.teamAName,
+      m.captainAName,
+      m.phoneA,
+      m.teamBName,
+      m.captainBName,
+      m.phoneB,
+      m.categoryLabel,
+      m.status,
+      new Date(m.createdAt).toLocaleString()
+    ]);
+
+    const csv = [headers, ...rows].map((line) => line.map(escapeCsv).join(",")).join("\n");
+    const blob = new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `matches-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportMatchesCsv = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const csvData = event.target?.result as string;
+      if (!csvData) return;
+
+      const lines = csvData.split("\n").map(l => l.trim()).filter(l => l);
+      if (lines.length < 2) return; // Only header or empty
+
+      // Helper to strip quotes
+      const clean = (s: string) => s.replace(/^["']|["']$/g, '').trim();
+
+      const headers = lines[0].split(",").map(clean);
+      const teamAIdx = headers.indexOf("Team A");
+      const teamBIdx = headers.indexOf("Team B");
+      const catIdx = headers.indexOf("Category");
+
+      if (teamAIdx === -1 || teamBIdx === -1 || catIdx === -1) {
+        alert("Invalid CSV format. Required columns: Team A, Team B, Category");
+        return;
+      }
+
+      const matchesToCreate = [];
+      const teamsByCategory: Record<string, any[]> = {};
+      
+      // Group registrations by category for better matching
+      registrations.forEach(r => {
+        if (!teamsByCategory[r.categoryLabel]) teamsByCategory[r.categoryLabel] = [];
+        teamsByCategory[r.categoryLabel].push(r);
+      });
+
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(",").map(clean);
+        const teamAName = cols[teamAIdx];
+        const teamBName = cols[teamBIdx];
+        const categoryLabel = cols[catIdx];
+
+        const categoryTeams = teamsByCategory[categoryLabel] || [];
+        const teamA = categoryTeams.find(t => t.teamName === teamAName);
+        const teamB = categoryTeams.find(t => t.teamName === teamBName);
+
+        if (teamA && teamB) {
+          matchesToCreate.push({
+            teamAId: teamA._id,
+            teamBId: teamB._id,
+            categoryId: teamA.categoryId,
+            categoryLabel: teamA.categoryLabel,
+          });
+        }
+      }
+
+      if (matchesToCreate.length > 0) {
+        try {
+          await importMatches({ token: sessionToken, matches: matchesToCreate as any });
+          alert(`Successfully imported ${matchesToCreate.length} matches!`);
+        } catch (err) {
+          alert("Import failed. Check console for details.");
+          console.error(err);
+        }
+      } else {
+        alert("No matching teams found in CSV.");
+      }
+    };
+    reader.readAsText(file);
+    // Reset input
+    e.target.value = "";
+  };
+
+  if (session === undefined && sessionToken !== "") {
+    return <div className="min-h-screen bg-background flex items-center justify-center p-8"><p className="text-muted-foreground">Validating admin session...</p></div>;
+  }
+
   if (!isLoggedIn) {
-    return <LoginPage onLogin={() => setIsLoggedIn(true)} />;
+    return <LoginPage onLogin={handleLogin} />;
   }
 
   const sidebarLinks = [
     { id: "overview", label: "Dashboard", icon: LayoutDashboard },
     { id: "registrations", label: "Registrations", icon: Users },
+    { id: "matches", label: "Match Making", icon: Activity },
     { id: "control", label: "System Controls", icon: Settings },
   ];
 
@@ -175,7 +333,7 @@ export default function AdminPage() {
 
             <div className="p-4 border-t border-border">
               <button 
-                onClick={() => setIsLoggedIn(false)}
+                onClick={handleLogout}
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm font-medium text-destructive hover:bg-destructive/10"
               >
                 <LogOut className="h-5 w-5" />
@@ -233,6 +391,97 @@ export default function AdminPage() {
                 <StatCard label="Approved Players" value={(stats?.paid ?? 0) * 6} icon={UserCheck} trend="Live" />
                 <StatCard label="Total Revenue" value={`₹${totalRevenue}`} icon={Wallet} trend="Live" />
                 <StatCard label="Site Mode" value={isRegistrationOnlyMode ? "Register Only" : "Fully Open"} icon={Settings} />
+              </div>
+
+              {/* Registration Forms by Category */}
+              <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="font-display font-bold text-lg">Registration Forms by Category</h3>
+                  <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded">Total: {stats?.total ?? 0}</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                  {categories.map((cat) => {
+                    const isMatch = (s: any) => {
+                      if (s.id === cat.id) return true;
+                      const sLabel = s.label?.trim() || "";
+                      const catLabel = cat.label?.trim() || "";
+                      if (sLabel === catLabel) return true;
+                      if (sLabel && catLabel && (sLabel.includes(catLabel) || catLabel.includes(sLabel))) return true;
+                      if (cat.id === "women") {
+                        const variations = [
+                          "મહિલાઓ તથા 16 વર્ષ થી વધુ ઉંમર ની યુવતીઓ",
+                          "મહિલાઓ તથા યુવતીઓ 16 વર્ષ થી વધુ ઉંમર ના",
+                          "મહિલાઓ તથા 16 વર્ષ થી વધુ ઉંમર ની યુવતીઓ  "
+                        ];
+                        return variations.some(v => sLabel.includes(v) || v.includes(sLabel));
+                      }
+                      return false;
+                    };
+
+                    const categoryData = stats?.byCategory?.find(isMatch);
+                    const count = categoryData?.count ?? 0;
+                    
+                    return (
+                      <div 
+                        key={cat.id} 
+                        className={`relative group overflow-hidden bg-muted/20 border border-border/50 rounded-xl p-5 transition-all hover:bg-muted/30 hover:border-primary/30`}
+                      >
+                        <div className="flex flex-col h-full justify-between gap-4">
+                          <div>
+                            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-1">Forms</p>
+                            <p className="text-4xl font-black text-primary font-display">{count}</p>
+                          </div>
+                          <p className="text-xs text-foreground/80 font-bold line-clamp-2 min-h-[2.5rem] leading-relaxed">
+                            {cat.label}
+                          </p>
+                        </div>
+                        {/* Progress Bar Background */}
+                        <div className="absolute bottom-0 left-0 h-1 bg-primary/20 w-full overflow-hidden">
+                          <motion.div 
+                            initial={{ width: 0 }}
+                            animate={{ width: stats?.total ? `${(count / stats.total) * 100}%` : 0 }}
+                            className="h-full bg-primary"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  
+                  {/* Display any unmatched categories for debugging */}
+                  {stats?.byCategory?.filter((s: any) => {
+                    return !categories.some(cat => {
+                      if (s.id === cat.id) return true;
+                      const sLabel = s.label?.trim() || "";
+                      const catLabel = cat.label?.trim() || "";
+                      if (sLabel === catLabel) return true;
+                      if (sLabel && catLabel && (sLabel.includes(catLabel) || catLabel.includes(sLabel))) return true;
+                      if (cat.id === "women") {
+                        const variations = [
+                          "મહિલાઓ તથા 16 વર્ષ થી વધુ ઉંમર ની યુવતીઓ",
+                          "મહિલાઓ તથા યુવતીઓ 16 વર્ષ થી વધુ ઉંમર ના",
+                          "મહિલાઓ તથા 16 વર્ષ થી વધુ ઉંમર ની યુવતીઓ  "
+                        ];
+                        return variations.some(v => sLabel.includes(v) || v.includes(sLabel));
+                      }
+                      return false;
+                    });
+                  }).map((unmatched: any) => (
+                    <div 
+                      key={unmatched.id || unmatched.label} 
+                      className="relative group overflow-hidden bg-destructive/10 border border-destructive/20 rounded-xl p-5"
+                    >
+                      <div className="flex flex-col h-full justify-between gap-4">
+                        <div>
+                          <p className="text-sm font-semibold text-destructive uppercase tracking-wider mb-1">Unmatched</p>
+                          <p className="text-4xl font-black text-destructive font-display">{unmatched.count}</p>
+                        </div>
+                        <p className="text-xs text-foreground/80 font-bold line-clamp-2 min-h-[2.5rem] leading-relaxed">
+                          {unmatched.label || unmatched.id}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Charts Section */}
@@ -323,6 +572,233 @@ export default function AdminPage() {
                     <p className="text-sm text-muted-foreground mt-1">Start scoring from the Scorer panel to see live updates.</p>
                   </div>
                 )}
+              </div>
+            </motion.div>
+          )}
+
+          {tab === "matches" && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 max-w-7xl mx-auto">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-display font-bold text-2xl">Match Making</h3>
+                  <p className="text-sm text-muted-foreground">Generate matches automatically or create them manually.</p>
+                </div>
+                <div className="flex gap-2">
+                  <div className="relative">
+                    <input 
+                      type="file" 
+                      accept=".csv" 
+                      className="hidden" 
+                      id="match-csv-upload" 
+                      onChange={handleImportMatchesCsv}
+                    />
+                    <Button 
+                      variant="outline" 
+                      className="border-primary/30 text-primary hover:bg-primary/10"
+                      onClick={() => document.getElementById('match-csv-upload')?.click()}
+                    >
+                      <FileText className="h-4 w-4 mr-2" /> Import CSV
+                    </Button>
+                  </div>
+                  <Button onClick={exportMatchesCsv} variant="outline" className="border-primary/30 text-primary hover:bg-primary/10">
+                    <FileText className="h-4 w-4 mr-2" /> Export CSV
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    className="border-destructive/30 text-destructive hover:bg-destructive/10"
+                    onClick={async () => {
+                      if (confirm("Delete all scheduled matches?")) {
+                        await deleteAllScheduled({ token: sessionToken });
+                      }
+                    }}
+                  >
+                    Clear Scheduled
+                  </Button>
+                  <Button 
+                    onClick={async () => {
+                      setIsGenerating(true);
+                      try {
+                        const count = await generateAutoMatches({ token: sessionToken });
+                        alert(`Successfully generated ${count} matches!`);
+                      } finally {
+                        setIsGenerating(false);
+                      }
+                    }}
+                    disabled={isGenerating}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
+                    {isGenerating ? "Generating..." : "Generate Auto Matches"}
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Manual Creation Form */}
+                <div className="lg:col-span-1 space-y-4">
+                  <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+                    <h4 className="font-bold mb-4 flex items-center gap-2">
+                      <Settings className="h-4 w-4" /> Manual Match
+                    </h4>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-muted-foreground uppercase">Category</label>
+                        <select 
+                          className="w-full bg-muted border border-border rounded-lg p-2.5 text-sm"
+                          value={selectedMatchCategory}
+                          onChange={(e) => {
+                            setSelectedMatchCategory(e.target.value);
+                            setTeamAId("");
+                            setTeamBId("");
+                          }}
+                        >
+                          <option value="">Select Category</option>
+                          {categories.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+                        </select>
+                      </div>
+
+                      {selectedMatchCategory && (
+                        <>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-muted-foreground uppercase">Team A</label>
+                            <select 
+                              className="w-full bg-muted border border-border rounded-lg p-2.5 text-sm"
+                              value={teamAId}
+                              onChange={(e) => setTeamAId(e.target.value)}
+                            >
+                              <option value="">Select Team A</option>
+                              {registrations
+                                .filter(r => r.categoryId === selectedMatchCategory)
+                                .map(r => <option key={r._id} value={r._id}>{r.teamName} ({r.captainName})</option>)
+                              }
+                            </select>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-muted-foreground uppercase">Team B</label>
+                            <select 
+                              className="w-full bg-muted border border-border rounded-lg p-2.5 text-sm"
+                              value={teamBId}
+                              onChange={(e) => setTeamBId(e.target.value)}
+                            >
+                              <option value="">Select Team B</option>
+                              {registrations
+                                .filter(r => r.categoryId === selectedMatchCategory && r._id !== teamAId)
+                                .map(r => <option key={r._id} value={r._id}>{r.teamName} ({r.captainName})</option>)
+                              }
+                            </select>
+                          </div>
+
+                          <Button 
+                            className="w-full mt-2" 
+                            disabled={!teamAId || !teamBId}
+                            onClick={async () => {
+                              const cat = categories.find(c => c.id === selectedMatchCategory);
+                              await createManualMatch({
+                                token: sessionToken,
+                                teamAId: teamAId as any,
+                                teamBId: teamBId as any,
+                                categoryId: selectedMatchCategory,
+                                categoryLabel: cat?.label ?? "",
+                              });
+                              setTeamAId("");
+                              setTeamBId("");
+                              alert("Match created!");
+                            }}
+                          >
+                            Create Match
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Scheduled Matches List */}
+                <div className="lg:col-span-2 space-y-4">
+                  <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+                    <div className="p-4 border-b border-border bg-muted/20">
+                      <h4 className="font-bold">Scheduled Matches</h4>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-border text-left">
+                            <th className="p-4 font-semibold text-muted-foreground uppercase text-xs">Match</th>
+                            <th className="p-4 font-semibold text-muted-foreground uppercase text-xs">Category</th>
+                            <th className="p-4 font-semibold text-muted-foreground uppercase text-xs">Status</th>
+                            <th className="p-4 font-semibold text-muted-foreground uppercase text-xs text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/50">
+                          {matches.map((match) => (
+                            <tr key={match._id} className="hover:bg-muted/10 transition-colors">
+                              <td className="p-4 font-medium">
+                                <div className="flex flex-col gap-1.5">
+                                  <div className="flex flex-col">
+                                    <span className="text-foreground">{match.teamAName}</span>
+                                    <span className="text-[10px] text-muted-foreground flex gap-2">
+                                      <span>Capt: {match.captainAName}</span>
+                                      <span>•</span>
+                                      <span>{match.phoneA}</span>
+                                    </span>
+                                  </div>
+                                  <span className="text-[10px] text-primary/50 uppercase font-black px-2 py-0.5 bg-primary/5 border border-primary/10 rounded w-fit">vs</span>
+                                  <div className="flex flex-col">
+                                    <span className="text-foreground">{match.teamBName}</span>
+                                    <span className="text-[10px] text-muted-foreground flex gap-2">
+                                      <span>Capt: {match.captainBName}</span>
+                                      <span>•</span>
+                                      <span>{match.phoneB}</span>
+                                    </span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="p-4">
+                                <span className="px-2 py-0.5 rounded bg-muted text-xs border border-border">
+                                  {match.categoryLabel}
+                                </span>
+                              </td>
+                              <td className="p-4">
+                                <span className={`text-xs font-bold px-2 py-1 rounded-full uppercase ${
+                                  match.status === "live" ? "bg-emerald-500/10 text-emerald-500" : "bg-primary/10 text-primary"
+                                }`}>
+                                  {match.status}
+                                </span>
+                              </td>
+                              <td className="p-4 text-right space-x-2">
+                                {match.status === "scheduled" && (
+                                  <>
+                                    <Button 
+                                      size="sm" 
+                                      variant="outline" 
+                                      className="h-8 border-primary text-primary hover:bg-primary/10"
+                                      onClick={() => startMatch({ token: sessionToken, matchId: match._id })}
+                                    >
+                                      Start Live
+                                    </Button>
+                                    <button 
+                                      onClick={() => deleteMatch({ token: sessionToken, id: match._id })}
+                                      className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </button>
+                                  </>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                          {matches.length === 0 && (
+                            <tr>
+                              <td colSpan={4} className="p-8 text-center text-muted-foreground italic">
+                                No matches scheduled. Use the auto-generator or create one manually.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
               </div>
             </motion.div>
           )}

@@ -57,11 +57,21 @@ export const listRegistrations = query({
 export const registrationStats = query({
   args: {},
   handler: async (ctx) => {
-    const rows = await ctx.db.query("registrations").withIndex("by_createdAt").order("desc").take(200);
+    const rows = await ctx.db.query("registrations").collect();
+    
+    const byCategory: Record<string, { id: string, label: string, count: number }> = {};
+    rows.forEach(reg => {
+      if (!byCategory[reg.categoryId]) {
+        byCategory[reg.categoryId] = { id: reg.categoryId, label: reg.categoryLabel, count: 0 };
+      }
+      byCategory[reg.categoryId].count++;
+    });
+
     return {
       total: rows.length,
       pending: rows.filter((r) => r.paymentStatus === "pending").length,
       paid: rows.filter((r) => r.paymentStatus === "paid").length,
+      byCategory: Object.values(byCategory),
     };
   },
 });

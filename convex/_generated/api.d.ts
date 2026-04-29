@@ -10,6 +10,7 @@
 
 import type * as adminAuth from "../adminAuth.js";
 import type * as liveScore from "../liveScore.js";
+import type * as matches from "../matches.js";
 import type * as registrations from "../registrations.js";
 import type * as settings from "../settings.js";
 
@@ -22,6 +23,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   adminAuth: typeof adminAuth;
   liveScore: typeof liveScore;
+  matches: typeof matches;
   registrations: typeof registrations;
   settings: typeof settings;
 }>;

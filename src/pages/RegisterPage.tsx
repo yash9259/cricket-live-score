@@ -18,8 +18,7 @@ function isAgeValidForCategory(categoryId, age) {
 function getCategoryLabel(categoryId) {
   return categories.find(c => c.id === categoryId)?.label || "";
 }
-import { useState } from "react";
-import { toast } from "@/components/ui/use-toast";
+import { useState, useRef } from "react";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Plus, Trash2, CheckCircle, AlertCircle } from "lucide-react";
@@ -28,10 +27,11 @@ import { api } from "../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/use-toast";
 
 const categories = [
   { id: "youth", label: "યુવાનો 16 વર્ષ થી ઉપરના", fee: 1500 },
-  { id: "women", label: "મહિલાઓ તથા યુવતીઓ 16 વર્ષ થી વધુ ઉંમર ના ", fee: 1200 },
+  { id: "women", label: "મહિલાઓ તથા 16 વર્ષ થી વધુ ઉંમર ની યુવતીઓ  ", fee: 1200 },
   { id: "boys-11-15", label: "બાળકો (11 થી 15 વર્ષ) - 01-04-2011 પછી જન્મ હોવો જોઈએ", fee: 900 },
   { id: "girls-11-15", label: "બાલિકાઓ (11 થી 15 વર્ષ) - 01-04-2011 પછી જન્મ હોવો જોઈએ", fee: 900 },
   { id: "kids-5-10", label: "બાળકો તથા બાલિકાઓ (5 થી 10 વર્ષ) - 01-04-2016 પછી જન્મ હોવો જોઈએ", fee: 900 },
@@ -40,6 +40,8 @@ const categories = [
 const ageOptions = Array.from({ length: 99 }, (_, i) => i + 1);
 
 export default function RegisterPage() {
+
+  const categoryRef = useRef<HTMLDivElement>(null);
   const [section, setSection] = useState<"rules" | "team" | "payment">("rules");
   // Toast
   // Scroll to top on section change
@@ -99,6 +101,12 @@ export default function RegisterPage() {
           variant: "destructive"
         });
         setSection("team");
+        // Scroll to category section
+        setTimeout(() => {
+          if (categoryRef.current) {
+            categoryRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 100);
         return;
       }
 
@@ -301,12 +309,18 @@ export default function RegisterPage() {
         )}
 
         {/* Section 2: Team Details */}
+
         {section === "team" && (
           <motion.form onSubmit={handleSubmit} className="space-y-6 rounded-xl border border-border bg-card p-8">
             <h2 className="font-display text-2xl font-bold text-foreground mb-4"></h2>
 
-            <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-4">
+            <div ref={categoryRef} className="space-y-3 rounded-lg border border-border bg-muted/20 p-4">
               <Label className="text-base font-semibold">Select Category</Label>
+              {teamValidationError && (
+                <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 mb-2">
+                  <p className="text-sm font-semibold text-destructive">{teamValidationError}</p>
+                </div>
+              )}
               <div className="space-y-2">
                 {categories.map((cat, index) => (
                   <label
