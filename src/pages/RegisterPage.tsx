@@ -18,20 +18,20 @@ function isAgeValidForCategory(categoryId, age) {
 function getCategoryLabel(categoryId) {
   return categories.find(c => c.id === categoryId)?.label || "";
 }
-import { useState } from "react";
-import { toast } from "@/components/ui/use-toast";
+import { useState, useRef } from "react";
 import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Plus, Trash2, CheckCircle, AlertCircle } from "lucide-react";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { toast } from "@/components/ui/use-toast";
 
 const categories = [
   { id: "youth", label: "યુવાનો 16 વર્ષ થી ઉપરના", fee: 1500 },
-  { id: "women", label: "મહિલાઓ તથા યુવતીઓ 16 વર્ષ થી વધુ ઉંમર ના ", fee: 1200 },
+  { id: "women", label: "મહિલાઓ તથા 16 વર્ષ થી વધુ ઉંમર ની યુવતીઓ  ", fee: 1200 },
   { id: "boys-11-15", label: "બાળકો (11 થી 15 વર્ષ) - 01-04-2011 પછી જન્મ હોવો જોઈએ", fee: 900 },
   { id: "girls-11-15", label: "બાલિકાઓ (11 થી 15 વર્ષ) - 01-04-2011 પછી જન્મ હોવો જોઈએ", fee: 900 },
   { id: "kids-5-10", label: "બાળકો તથા બાલિકાઓ (5 થી 10 વર્ષ) - 01-04-2016 પછી જન્મ હોવો જોઈએ", fee: 900 },
@@ -40,6 +40,8 @@ const categories = [
 const ageOptions = Array.from({ length: 99 }, (_, i) => i + 1);
 
 export default function RegisterPage() {
+
+  const categoryRef = useRef<HTMLDivElement>(null);
   const [section, setSection] = useState<"rules" | "team" | "payment">("rules");
   // Toast
   // Scroll to top on section change
@@ -62,6 +64,8 @@ export default function RegisterPage() {
   const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const createRegistration = useMutation(api.registrations.createRegistration);
   const generateUploadUrl = useMutation(api.registrations.generateUploadUrl);
+  const settings = useQuery(api.settings.getPublicSettings);
+  const isRegistrationsEnabled = settings?.registrationsEnabled ?? true;
 
   const handleScreenshotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -83,12 +87,28 @@ export default function RegisterPage() {
   const selectedFee = categories.find(c => c.id === selectedCategory)?.fee || 0;
   // Add note to UPI payment URL (only team name)
   const upiNote = teamName && teamName.trim() ? teamName.trim() : "team";
-  const upiPaymentUrl = `upi://pay?pa=9033615897@upi&pn=VRP Box Cricket&am=${selectedFee}&cu=INR&tn=${encodeURIComponent(upiNote)}`;
+  const upiPaymentUrl = `upi://pay?pa=9173568000@upi&pn=Sanju Thakkar&am=${selectedFee}&cu=INR&tn=${encodeURIComponent(upiNote)}`;
   const qrCodeSrc = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiPaymentUrl)}`;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isRegistrationsEnabled && section !== "rules") {
+      toast({
+        title: "Registrations Closed",
+        description: "New registrations are not being accepted at this time.",
+        variant: "destructive",
+      });
+      return;
+    }
     if (section === "rules") {
+      if (!isRegistrationsEnabled) {
+        toast({
+          title: "Registrations Closed",
+          description: "We are not accepting new team registrations at the moment.",
+          variant: "destructive",
+        });
+        return;
+      }
       setSection("team");
     } else if (section === "team") {
       if (!selectedCategory) {
@@ -99,6 +119,12 @@ export default function RegisterPage() {
           variant: "destructive"
         });
         setSection("team");
+        // Scroll to category section
+        setTimeout(() => {
+          if (categoryRef.current) {
+            categoryRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 100);
         return;
       }
 
@@ -206,6 +232,16 @@ export default function RegisterPage() {
         <h1 className="font-display text-4xl font-bold text-foreground mb-2">Box Cricket Registration</h1>
         <p className="text-muted-foreground mb-8">ટુર્નામેન્ટમાં તમારી ટીમ નું રજીસ્ટ્રેશન કરો</p>
 
+        {/* Banner for closed registrations */}
+        {!isRegistrationsEnabled && (
+          <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-xl mb-8 flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 shrink-0" />
+            <p className="text-sm font-medium">
+              Registrations are currently closed. You can view the rules, but you cannot submit a new team at this time.
+            </p>
+          </div>
+        )}
+
         {/* Progress Indicator */}
         <div className="flex gap-2 mb-8 justify-center">
           {["rules", "team", "payment"].map((s, i) => (
@@ -251,7 +287,7 @@ export default function RegisterPage() {
 
                 <p className="font-semibold text-white"></p>
                 <ul className="space-y-2 list-disc list-inside">
-                  <li>એન્ટ્રી ફી ફરજિયાત ગુગલ પે (Google Pay) <span className="font-bold">9033615897</span> દ્વારા ભરવાની રહેશે.</li>
+                  <li>એન્ટ્રી ફી ફરજિયાત ગુગલ પે (Google Pay) <span className="font-bold">9173568000</span> દ્વારા ભરવાની રહેશે.</li>
                   <li>માત્ર ફોર્મ ભરેલું હશે અને એન્ટ્રી ફી બાકી હશે તો તે ટીમનું નામ ડ્રોમાં નાખવામાં આવશે નહિ.</li>
 
                 </ul>
@@ -301,12 +337,18 @@ export default function RegisterPage() {
         )}
 
         {/* Section 2: Team Details */}
+
         {section === "team" && (
           <motion.form onSubmit={handleSubmit} className="space-y-6 rounded-xl border border-border bg-card p-8">
             <h2 className="font-display text-2xl font-bold text-foreground mb-4"></h2>
 
-            <div className="space-y-3 rounded-lg border border-border bg-muted/20 p-4">
+            <div ref={categoryRef} className="space-y-3 rounded-lg border border-border bg-muted/20 p-4">
               <Label className="text-base font-semibold">Select Category</Label>
+              {teamValidationError && (
+                <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-3 mb-2">
+                  <p className="text-sm font-semibold text-destructive">{teamValidationError}</p>
+                </div>
+              )}
               <div className="space-y-2">
                 {categories.map((cat, index) => (
                   <label
@@ -490,16 +532,10 @@ export default function RegisterPage() {
                   />
                 </div>
 
-                {/* Pay Now Button */}
-                <div className="flex justify-center mt-4">
-                  <a
-                    href={upiPaymentUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-block px-6 py-3 bg-green-600 text-white font-bold rounded-lg shadow hover:bg-green-700 transition-colors text-lg"
-                  >
-                    payment કરવા માટે અહીં click કરો
-                  </a>
+                <div className="text-center mt-4 space-y-2">
+                  <p className="text-xl font-bold text-foreground">
+                    pay on this number <span className="text-primary">9173568000</span> sanju thakkar
+                  </p>
                 </div>
 
                 <div className="mt-6 space-y-4 pt-4 border-t border-primary/20">
