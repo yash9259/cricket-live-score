@@ -96,8 +96,47 @@ export default defineSchema({
     showAnimation: v.optional(v.string()),
     animationId: v.optional(v.number()),
     outPlayers: v.optional(v.array(v.string())),
+    batsmenInning1: v.optional(v.array(v.object({ 
+      name: v.string(), 
+      runs: v.number(), 
+      balls: v.number(), 
+      isOut: v.boolean(),
+      dots: v.optional(v.number()),
+      points: v.optional(v.number())
+    }))),
+    bowlersInning1: v.optional(v.array(v.object({ 
+      name: v.string(), 
+      runs: v.number(), 
+      wickets: v.number(), 
+      balls: v.number(),
+      dots: v.optional(v.number()),
+      maidens: v.optional(v.number()),
+      extras: v.optional(v.number()),
+      points: v.optional(v.number())
+    }))),
+    batsmenInning2: v.optional(v.array(v.object({ 
+      name: v.string(), 
+      runs: v.number(), 
+      balls: v.number(), 
+      isOut: v.boolean(),
+      dots: v.optional(v.number()),
+      points: v.optional(v.number())
+    }))),
+    bowlersInning2: v.optional(v.array(v.object({ 
+      name: v.string(), 
+      runs: v.number(), 
+      wickets: v.number(), 
+      balls: v.number(),
+      dots: v.optional(v.number()),
+      maidens: v.optional(v.number()),
+      extras: v.optional(v.number()),
+      points: v.optional(v.number())
+    }))),
+    showScoreboard: v.optional(v.boolean()),
     updatedAt: v.number(),
-  }).index("by_key", ["key"]),
+  }).index("by_key", ["key"])
+    .index("by_matchId", ["matchId"])
+    .index("by_updatedAt", ["updatedAt"]),
 
   matches: defineTable({
     teamAId: v.id("registrations"),
@@ -106,7 +145,27 @@ export default defineSchema({
     categoryLabel: v.string(),
     status: v.union(v.literal("scheduled"), v.literal("live"), v.literal("completed")),
     winnerId: v.optional(v.id("registrations")),
+    finalScoreA: v.optional(v.object({ runs: v.number(), wickets: v.number(), overs: v.number(), balls: v.number() })),
+    finalScoreB: v.optional(v.object({ runs: v.number(), wickets: v.number(), overs: v.number(), balls: v.number() })),
+    manOfTheMatch: v.optional(v.string()),
+    revealMoM: v.optional(v.boolean()),
+    date: v.optional(v.string()),
+    time: v.optional(v.string()),
     createdAt: v.number(),
   }).index("by_status", ["status"])
     .index("by_categoryId", ["categoryId"]),
+
+  playerMatchStats: defineTable({
+    matchId: v.id("matches"),
+    teamId: v.id("registrations"),
+    teamName: v.string(),
+    playerName: v.string(),
+    battingPoints: v.number(),
+    bowlingPoints: v.number(),
+    totalPoints: v.number(),
+    categoryLabel: v.string(),
+    isMoM: v.optional(v.boolean()),
+  }).index("by_matchId", ["matchId"])
+    .index("by_player", ["teamId", "playerName"])
+    .index("by_points", ["totalPoints"]),
 });

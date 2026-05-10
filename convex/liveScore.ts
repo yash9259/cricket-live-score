@@ -11,12 +11,24 @@ const stripUndefined = <T extends Record<string, unknown>>(value: T) => {
 export const getCurrent = query({
   args: {},
   handler: async (ctx) => {
+    // Get the most recently updated score record
     const current = await ctx.db
       .query("liveScores")
-      .withIndex("by_key", (q) => q.eq("key", "main"))
+      .withIndex("by_updatedAt")
+      .order("desc")
       .take(1);
 
     return current[0] ?? null;
+  },
+});
+
+export const getByMatchId = query({
+  args: { matchId: v.id("matches") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("liveScores")
+      .withIndex("by_matchId", (q) => q.eq("matchId", args.matchId))
+      .unique();
   },
 });
 
@@ -55,20 +67,42 @@ export const upsert = mutation({
     showAnimation: v.optional(v.string()),
     animationId: v.optional(v.number()),
     outPlayers: v.optional(v.array(v.string())),
+    batsmenInning1: v.optional(v.array(v.object({ 
+      name: v.string(), runs: v.number(), balls: v.number(), isOut: v.boolean(),
+      dots: v.optional(v.number()), points: v.optional(v.number()) 
+    }))),
+    bowlersInning1: v.optional(v.array(v.object({ 
+      name: v.string(), runs: v.number(), wickets: v.number(), balls: v.number(),
+      dots: v.optional(v.number()), maidens: v.optional(v.number()), extras: v.optional(v.number()), points: v.optional(v.number())
+    }))),
+    batsmenInning2: v.optional(v.array(v.object({ 
+      name: v.string(), runs: v.number(), balls: v.number(), isOut: v.boolean(),
+      dots: v.optional(v.number()), points: v.optional(v.number()) 
+    }))),
+    bowlersInning2: v.optional(v.array(v.object({ 
+      name: v.string(), runs: v.number(), wickets: v.number(), balls: v.number(),
+      dots: v.optional(v.number()), maidens: v.optional(v.number()), extras: v.optional(v.number()), points: v.optional(v.number())
+    }))),
+    showScoreboard: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
     await requireAdminSession(ctx, args.token);
 
-    const existingScores = await ctx.db
-      .query("liveScores")
-      .withIndex("by_key", (q) => q.eq("key", "main"))
-      .take(2);
-    const existing = existingScores[0] ?? null;
+    // Try to find by matchId first if provided
+    let existing = null;
+    if (args.matchId) {
+      existing = await ctx.db
+        .query("liveScores")
+        .withIndex("by_matchId", (q) => q.eq("matchId", args.matchId))
+        .unique();
+    }
 
-    if (existingScores.length > 1) {
-      for (const duplicate of existingScores.slice(1)) {
-        await ctx.db.delete(duplicate._id);
-      }
+    // Fallback to "main" key for compatibility or if no matchId
+    if (!existing) {
+      existing = await ctx.db
+        .query("liveScores")
+        .withIndex("by_key", (q) => q.eq("key", "main"))
+        .unique();
     }
 
     const optionalData = stripUndefined({
@@ -89,6 +123,11 @@ export const upsert = mutation({
       showAnimation: args.showAnimation,
       animationId: args.animationId,
       outPlayers: args.outPlayers,
+      batsmenInning1: args.batsmenInning1,
+      bowlersInning1: args.bowlersInning1,
+      batsmenInning2: args.batsmenInning2,
+      bowlersInning2: args.bowlersInning2,
+      showScoreboard: args.showScoreboard,
     });
 
     const patchData = {
@@ -110,7 +149,7 @@ export const upsert = mutation({
     }
 
     return await ctx.db.insert("liveScores", {
-      key: "main",
+      key: args.matchId ? `match-${args.matchId}` : "main",
       ...patchData,
     });
   },
@@ -157,6 +196,10 @@ export const reset = mutation({
         bowlerWickets: 0,
         bowlerBalls: 0,
         ballHistory: [],
+        batsmenInning1: [],
+        bowlersInning1: [],
+        batsmenInning2: [],
+        bowlersInning2: [],
         updatedAt: Date.now(),
       });
       return existing._id;
@@ -181,6 +224,10 @@ export const reset = mutation({
       bowlerWickets: 0,
       bowlerBalls: 0,
       ballHistory: [],
+      batsmenInning1: [],
+      bowlersInning1: [],
+      batsmenInning2: [],
+      bowlersInning2: [],
       updatedAt: Date.now(),
     });
   },

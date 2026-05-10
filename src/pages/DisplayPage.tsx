@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useEffect, useState } from "react";
+import { ScoreboardTable } from "@/components/ScoreboardTable";
 
 function AnimationOverlay({ type, id, lastEvent }: { type: string, id: number, lastEvent?: string }) {
   const [visible, setVisible] = useState(false);
@@ -236,6 +237,41 @@ export default function DisplayPage() {
           </div>
         </motion.div>
       </div>
+
+      {/* Scoreboard Overlay - Moved to bottom for Z-index reliability */}
+      <AnimatePresence>
+        {live.showScoreboard === true && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-slate-950 flex flex-col p-6 md:p-12 overflow-y-auto"
+          >
+            <div className="max-w-6xl mx-auto w-full space-y-6 md:space-y-8">
+              <div className="flex flex-col md:flex-row justify-between items-center border-b border-white/10 pb-6 gap-4">
+                <div className="text-center md:text-left">
+                  <h2 className="font-display text-4xl md:text-6xl font-black uppercase tracking-tighter text-white">
+                    Match <span className="text-primary">Scorecard</span>
+                  </h2>
+                  <p className="text-muted-foreground text-lg md:text-xl mt-1">{live.battingTeam} vs {live.bowlingTeam}</p>
+                </div>
+                <div className="text-center md:text-right bg-primary/10 border border-primary/20 p-4 rounded-2xl min-w-[200px]">
+                   <p className="text-4xl md:text-5xl font-display font-black text-primary leading-none">{live.runs}/{live.wickets}</p>
+                   <p className="text-muted-foreground font-bold mt-1 tracking-widest uppercase text-xs">Overs: {live.overs}.{live.balls}</p>
+                </div>
+              </div>
+              
+              <div className="bg-card/30 rounded-3xl border border-white/5 p-2 backdrop-blur-sm shadow-2xl">
+                <ScoreboardTable matchId={live.matchId} data={live} />
+              </div>
+
+              <div className="text-center pt-4 pb-8">
+                <p className="text-muted-foreground/50 font-display text-[10px] tracking-[0.5em] uppercase animate-pulse">Live Scoreboard — VRP Box Cricket 2026</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -1,193 +1,136 @@
 import { useParams, Link } from "react-router-dom";
-import { useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
-import { matches } from "@/lib/mockData";
-import type { BallEvent } from "@/lib/mockData";
-
-const ballColor = (type: BallEvent["type"]) => {
-  switch (type) {
-    case "four": return "bg-primary text-primary-foreground";
-    case "six": return "bg-neon-yellow text-primary-foreground";
-    case "wicket": return "bg-destructive text-destructive-foreground";
-    case "wide": case "noball": return "bg-neon-orange/80 text-primary-foreground";
-    default: return "bg-muted text-muted-foreground";
-  }
-};
-
-const ballLabel = (e: BallEvent) => {
-  if (e.type === "wicket") return "W";
-  if (e.type === "wide") return "WD";
-  if (e.type === "noball") return "NB";
-  return String(e.runs);
-};
+import { ArrowLeft, Trophy } from "lucide-react";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { ScoreboardTable } from "@/components/ScoreboardTable";
+import { Id } from "../../convex/_generated/dataModel";
 
 export default function MatchDetailPage() {
   const { id } = useParams();
-  const match = matches.find((m) => m.id === id);
-  const [tab, setTab] = useState<"scorecard" | "timeline">("scorecard");
+  const matchId = id as Id<"matches">;
+  const matches = useQuery(api.matches.list) ?? [];
+  const match = matches.find((m) => m._id === matchId);
+  const scoreData = useQuery(api.liveScore.getByMatchId, { matchId });
 
   if (!match) {
     return (
       <div className="container mx-auto px-4 py-20 text-center">
-        <p className="text-muted-foreground">Match not found.</p>
-        <Link to="/matches" className="text-primary underline mt-4 inline-block">Back to Matches</Link>
+        <p className="text-muted-foreground italic">Match details not found.</p>
+        <Link to="/matches" className="text-primary hover:underline mt-6 inline-flex items-center gap-2">
+          <ArrowLeft className="h-4 w-4" /> Back to Matches
+        </Link>
       </div>
     );
   }
 
+  const getResult = () => {
+    if (!scoreData) return "Scoreboard not available";
+    if (scoreData.inning === 1) return "1st Inning in progress...";
+    if (scoreData.runs >= (scoreData.target || 0)) {
+      return `${scoreData.battingTeam} WON BY ${6 - scoreData.wickets} WICKETS`;
+    }
+    const target = scoreData.target || 0;
+    const isMatchOver = scoreData.overs === 6 || scoreData.wickets === 6;
+    
+    if (isMatchOver) {
+        if (scoreData.runs < target - 1) {
+            return `${scoreData.bowlingTeam} WON BY ${target - scoreData.runs - 1} RUNS`;
+        }
+        if (scoreData.runs === target - 1) return "MATCH TIED!";
+    }
+    
+    return "2nd Inning in progress...";
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
-      <Link to="/matches" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-6">
+      <Link to="/matches" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors">
         <ArrowLeft className="h-4 w-4" /> Back to Matches
       </Link>
 
-      {/* Scoreboard Header */}
+      {/* Match Hero Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="rounded-xl border border-border bg-card p-6 md:p-8"
+        className="rounded-3xl border border-border bg-card p-8 md:p-12 mb-10 shadow-2xl relative overflow-hidden"
       >
-        {match.status === "live" && <span className="live-badge mb-4 inline-flex">LIVE</span>}
-        {match.winner && <p className="text-primary font-semibold text-sm mb-3">🏆 {match.winner} won{match.mom ? ` • MoM: ${match.mom}` : ""}</p>}
+        {/* Background Decoration */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-primary/5 rounded-full translate-y-1/2 -translate-x-1/2 blur-3xl" />
 
-        <div className="flex items-center justify-between gap-6">
-          <div className="flex-1 text-center">
-            <p className="font-display text-xl md:text-2xl font-bold text-foreground">{match.teamA.name}</p>
-            {match.scoreA && (
-              <>
-                <p className="font-display text-5xl md:text-6xl font-bold text-primary mt-2 neon-text-green">
-                  {match.scoreA.runs}<span className="text-3xl text-muted-foreground">/{match.scoreA.wickets}</span>
-                </p>
-                <p className="text-muted-foreground mt-1">({match.scoreA.overs}.{match.scoreA.balls} ov)</p>
-              </>
+        <div className="relative z-10">
+          <div className="flex flex-col items-center text-center mb-8">
+            <span className="px-4 py-1 rounded-full bg-muted text-[10px] font-black uppercase tracking-[0.3em] mb-4 border border-border">
+              {match.categoryLabel}
+            </span>
+            {match.status === "live" && (
+              <span className="flex items-center gap-2 px-3 py-1 rounded-full bg-destructive/10 text-destructive text-xs font-bold animate-pulse mb-4 border border-destructive/20">
+                <span className="w-2 h-2 rounded-full bg-current" /> LIVE MATCH
+              </span>
             )}
           </div>
 
-          <span className="font-display text-2xl text-muted-foreground/50 font-bold">VS</span>
-
-          <div className="flex-1 text-center">
-            <p className="font-display text-xl md:text-2xl font-bold text-foreground">{match.teamB.name}</p>
-            {match.scoreB && (
-              <>
-                <p className="font-display text-5xl md:text-6xl font-bold text-neon-orange mt-2">
-                  {match.scoreB.runs}<span className="text-3xl text-muted-foreground">/{match.scoreB.wickets}</span>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-12 max-w-4xl mx-auto">
+            <div className="flex-1 text-center">
+              <h2 className="font-display text-2xl md:text-4xl font-black uppercase tracking-tighter text-foreground mb-2">{match.teamAName}</h2>
+              {scoreData && scoreData.inning === 1 && (
+                <p className="font-display text-5xl font-black text-primary">
+                  {scoreData.runs}<span className="text-2xl text-muted-foreground">/{scoreData.wickets}</span>
                 </p>
-                <p className="text-muted-foreground mt-1">({match.scoreB.overs}.{match.scoreB.balls} ov)</p>
-              </>
-            )}
+              )}
+            </div>
+
+            <div className="flex flex-col items-center">
+              <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center border border-border">
+                <span className="font-display font-black text-xl text-muted-foreground/50">VS</span>
+              </div>
+            </div>
+
+            <div className="flex-1 text-center">
+              <h2 className="font-display text-2xl md:text-4xl font-black uppercase tracking-tighter text-foreground mb-2">{match.teamBName}</h2>
+              {scoreData && scoreData.inning === 2 && (
+                <p className="font-display text-5xl font-black text-orange-500">
+                  {scoreData.runs}<span className="text-2xl text-muted-foreground">/{scoreData.wickets}</span>
+                </p>
+              )}
+            </div>
           </div>
+
+          {scoreData && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="mt-12 text-center"
+            >
+              <div className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-primary/10 border border-primary/20">
+                <Trophy className="h-6 w-6 text-yellow-500 animate-bounce" />
+                <p className="font-display text-xl font-bold uppercase tracking-widest text-primary drop-shadow-[0_0_15px_rgba(var(--primary),0.3)]">
+                  {getResult()}
+                </p>
+              </div>
+              
+              {scoreData.target && scoreData.inning === 2 && scoreData.runs < scoreData.target && (
+                <p className="mt-4 text-sm font-bold text-muted-foreground uppercase tracking-[0.2em]">
+                  Need {scoreData.target - scoreData.runs} runs from {36 - (scoreData.overs * 6 + scoreData.balls)} balls
+                </p>
+              )}
+            </motion.div>
+          )}
         </div>
-
-        {match.status === "live" && match.scoreA && match.scoreB && (
-          <p className="text-center mt-4 text-sm text-neon-yellow font-semibold">
-            {match.teamB.name} needs {match.scoreA.runs - match.scoreB.runs + 1} runs from {(match.overs * 6) - (match.scoreB.overs * 6 + match.scoreB.balls)} balls
-          </p>
-        )}
       </motion.div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 mt-8 mb-6">
-        {(["scorecard", "timeline"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`px-4 py-2 rounded-full text-sm font-semibold capitalize ${
-              tab === t ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-            }`}
-          >
-            {t === "scorecard" ? "Scorecard" : "Ball by Ball"}
-          </button>
-        ))}
+      {/* Scoreboard Table Section */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="h-1 flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+          <h3 className="font-display text-2xl font-black uppercase tracking-tighter shrink-0">Detailed <span className="text-primary">Scorecard</span></h3>
+          <div className="h-1 flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+        </div>
+        
+        <ScoreboardTable matchId={matchId} />
       </div>
-
-      {tab === "scorecard" && (
-        <div className="grid gap-6 md:grid-cols-2">
-          {[match.teamA, match.teamB].map((team) => (
-            <div key={team.id} className="rounded-xl border border-border bg-card p-5">
-              <h3 className="font-display text-lg font-bold text-foreground mb-4">{team.name} — Batting</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-muted-foreground text-left border-b border-border">
-                      <th className="pb-2 font-medium">Batsman</th>
-                      <th className="pb-2 font-medium text-right">R</th>
-                      <th className="pb-2 font-medium text-right">B</th>
-                      <th className="pb-2 font-medium text-right">4s</th>
-                      <th className="pb-2 font-medium text-right">6s</th>
-                      <th className="pb-2 font-medium text-right">SR</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {team.players.map((p) => (
-                      <tr key={p.id} className="border-b border-border/50">
-                        <td className="py-2 text-foreground">
-                          {p.name}
-                          {p.isOut && <span className="text-xs text-muted-foreground ml-1">({p.howOut})</span>}
-                        </td>
-                        <td className="py-2 text-right font-semibold text-foreground">{p.runs}</td>
-                        <td className="py-2 text-right text-muted-foreground">{p.balls}</td>
-                        <td className="py-2 text-right text-muted-foreground">{p.fours}</td>
-                        <td className="py-2 text-right text-muted-foreground">{p.sixes}</td>
-                        <td className="py-2 text-right text-muted-foreground">{p.balls > 0 ? ((p.runs / p.balls) * 100).toFixed(1) : "0.0"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <h4 className="font-display text-md font-bold text-foreground mt-6 mb-3">Bowling</h4>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-muted-foreground text-left border-b border-border">
-                      <th className="pb-2 font-medium">Bowler</th>
-                      <th className="pb-2 font-medium text-right">O</th>
-                      <th className="pb-2 font-medium text-right">R</th>
-                      <th className="pb-2 font-medium text-right">W</th>
-                      <th className="pb-2 font-medium text-right">Eco</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {team.players.filter((p) => p.overs > 0).map((p) => (
-                      <tr key={p.id} className="border-b border-border/50">
-                        <td className="py-2 text-foreground">{p.name}</td>
-                        <td className="py-2 text-right text-muted-foreground">{p.overs}</td>
-                        <td className="py-2 text-right text-muted-foreground">{p.runsConceded}</td>
-                        <td className="py-2 text-right font-semibold text-foreground">{p.wickets}</td>
-                        <td className="py-2 text-right text-muted-foreground">{p.overs > 0 ? (p.runsConceded / p.overs).toFixed(1) : "-"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {tab === "timeline" && match.ballByBall && (
-        <div className="rounded-xl border border-border bg-card p-6">
-          <h3 className="font-display text-lg font-bold text-foreground mb-4">Ball-by-Ball</h3>
-          {Object.entries(
-            match.ballByBall.reduce<Record<number, BallEvent[]>>((acc, b) => {
-              (acc[b.over] = acc[b.over] || []).push(b);
-              return acc;
-            }, {})
-          ).map(([over, balls]) => (
-            <div key={over} className="mb-4">
-              <p className="text-sm text-muted-foreground mb-2 font-semibold">Over {over}</p>
-              <div className="flex flex-wrap gap-2">
-                {balls.map((b, i) => (
-                  <span key={i} className={`inline-flex items-center justify-center w-10 h-10 rounded-full text-sm font-bold ${ballColor(b.type)}`}>
-                    {ballLabel(b)}
-                  </span>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

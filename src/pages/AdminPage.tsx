@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/use-toast";
+import { ScoreboardTable } from "@/components/ScoreboardTable";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +20,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import LoginPage from "./LoginPage";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
@@ -49,6 +57,7 @@ export default function AdminPage() {
   const [tab, setTab] = useState<Tab>("overview");
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   const [expandedTeamId, setExpandedTeamId] = useState<string | null>(null);
+  const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
   const [showDuplicatesOnly, setShowDuplicatesOnly] = useState(false);
 
   const handleTabSelect = (id: Tab) => {
@@ -62,6 +71,7 @@ export default function AdminPage() {
   const stats = useQuery(api.registrations.registrationStats);
   const settings = useQuery(api.settings.getPublicSettings);
   const liveScore = useQuery(api.liveScore.getCurrent);
+  const seriesLeaderboard = useQuery(api.matches.getSeriesLeaderboard);
   const setRegistrationOnlyMode = useMutation(api.settings.setRegistrationOnlyMode);
   const setRegistrationsEnabled = useMutation(api.settings.setRegistrationsEnabled);
 
@@ -72,10 +82,12 @@ export default function AdminPage() {
   const deleteAllScheduled = useMutation(api.matches.deleteAllScheduled);
   const startMatch = useMutation(api.matches.startMatch);
   const importMatches = useMutation(api.matches.createMany);
+
   const updateRegistration = useMutation(api.registrations.updateRegistration);
   const deleteRegistration = useMutation(api.registrations.deleteRegistration);
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [editingTeam, setEditingTeam] = useState<any>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isManualRegOpen, setIsManualRegOpen] = useState(false);
@@ -83,7 +95,11 @@ export default function AdminPage() {
   const [selectedMatchCategory, setSelectedMatchCategory] = useState("");
   const [teamAId, setTeamAId] = useState("");
   const [teamBId, setTeamBId] = useState("");
+  const [matchDate, setMatchDate] = useState("");
+  const [matchTime, setMatchTime] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+  const [teamASearch, setTeamASearch] = useState("");
+  const [teamBSearch, setTeamBSearch] = useState("");
 
   // Registration Tab Logic
   const nameCountMap = useMemo(() => {
@@ -106,9 +122,10 @@ export default function AdminPage() {
                            r.captainName.toLowerCase().includes(searchQuery.toLowerCase()) ||
                            r.phone.includes(searchQuery);
       const matchesDup = !showDuplicatesOnly || isDuplicate(r);
-      return matchesSearch && matchesDup;
+      const matchesCategory = selectedCategory === "all" || r.categoryId === selectedCategory;
+      return matchesSearch && matchesDup && matchesCategory;
     });
-  }, [registrations, searchQuery, showDuplicatesOnly, nameCountMap]);
+  }, [registrations, searchQuery, showDuplicatesOnly, nameCountMap, selectedCategory]);
 
   const categories = [
     { id: "youth", label: "યુવાનો 16 વર્ષ થી ઉપરના" },
@@ -198,7 +215,7 @@ export default function AdminPage() {
   };
 
   const exportMatchesCsv = () => {
-    const headers = ["Team A", "Captain A", "Phone A", "Team B", "Captain B", "Phone B", "Category", "Status", "Created At"];
+    const headers = ["Team A", "Team B", "Category", "Status", "Date", "Time"];
     const escapeCsv = (value: string | number) => {
       const str = String(value ?? "");
       return `"${str.replace(/"/g, '""')}"`;
@@ -206,14 +223,11 @@ export default function AdminPage() {
 
     const rows = matches.map((m) => [
       m.teamAName,
-      m.captainAName,
-      m.phoneA,
       m.teamBName,
-      m.captainBName,
-      m.phoneB,
       m.categoryLabel,
       m.status,
-      new Date(m.createdAt).toLocaleString()
+      m.date || "",
+      m.time || ""
     ]);
 
     const csv = [headers, ...rows].map((line) => line.map(escapeCsv).join(",")).join("\n");
@@ -245,6 +259,8 @@ export default function AdminPage() {
       const teamAIdx = headers.indexOf("Team A");
       const teamBIdx = headers.indexOf("Team B");
       const catIdx = headers.indexOf("Category");
+      const dateIdx = headers.indexOf("Date");
+      const timeIdx = headers.indexOf("Time");
 
       if (teamAIdx === -1 || teamBIdx === -1 || catIdx === -1) {
         alert("Invalid CSV format. Required columns: Team A, Team B, Category");
@@ -265,6 +281,8 @@ export default function AdminPage() {
         const teamAName = cols[teamAIdx];
         const teamBName = cols[teamBIdx];
         const categoryLabel = cols[catIdx];
+        const date = dateIdx !== -1 ? cols[dateIdx] : undefined;
+        const time = timeIdx !== -1 ? cols[timeIdx] : undefined;
 
         const categoryTeams = teamsByCategory[categoryLabel] || [];
         const teamA = categoryTeams.find(t => t.teamName === teamAName);
@@ -276,6 +294,8 @@ export default function AdminPage() {
             teamBId: teamB._id,
             categoryId: teamA.categoryId,
             categoryLabel: teamA.categoryLabel,
+            date,
+            time,
           });
         }
       }
@@ -619,6 +639,50 @@ export default function AdminPage() {
                   </div>
                 )}
               </div>
+
+              {/* Player Leaderboard */}
+              <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="font-display font-bold text-lg">Series Leaderboard (Top Players)</h3>
+                  <Link to="/leaderboard" className="text-sm text-primary hover:underline flex items-center">
+                    Full Leaderboard <ChevronRight className="h-4 w-4 ml-1" />
+                  </Link>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border text-left">
+                        <th className="pb-3 font-semibold text-muted-foreground uppercase text-xs">Player</th>
+                        <th className="pb-3 font-semibold text-muted-foreground uppercase text-xs">Team</th>
+                        <th className="pb-3 font-semibold text-muted-foreground uppercase text-xs text-center">Batting</th>
+                        <th className="pb-3 font-semibold text-muted-foreground uppercase text-xs text-center">Bowling</th>
+                        <th className="pb-3 font-semibold text-muted-foreground uppercase text-xs text-right">Total Points</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {seriesLeaderboard?.slice(0, 5).map((player: any, idx: number) => (
+                        <tr key={idx} className="group hover:bg-muted/30 transition-colors">
+                          <td className="py-4 font-medium flex items-center gap-2">
+                            <span className={`w-6 h-6 flex items-center justify-center rounded-full text-[10px] font-bold ${idx === 0 ? 'bg-yellow-500/20 text-yellow-500' : 'bg-muted text-muted-foreground'}`}>
+                              {idx + 1}
+                            </span>
+                            {player.playerName}
+                          </td>
+                          <td className="py-4 text-muted-foreground">{player.teamName}</td>
+                          <td className="py-4 text-center">{player.batting}</td>
+                          <td className="py-4 text-center">{player.bowling}</td>
+                          <td className="py-4 text-right font-bold text-primary">{player.total}</td>
+                        </tr>
+                      ))}
+                      {(!seriesLeaderboard || seriesLeaderboard.length === 0) && (
+                        <tr>
+                          <td colSpan={5} className="py-8 text-center text-muted-foreground">No stats available yet.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </motion.div>
           )}
 
@@ -688,67 +752,142 @@ export default function AdminPage() {
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <label className="text-xs font-bold text-muted-foreground uppercase">Category</label>
-                        <select
-                          className="w-full bg-muted border border-border rounded-lg p-2.5 text-sm"
+                        <Select
                           value={selectedMatchCategory}
-                          onChange={(e) => {
-                            setSelectedMatchCategory(e.target.value);
+                          onValueChange={(value) => {
+                            setSelectedMatchCategory(value);
                             setTeamAId("");
                             setTeamBId("");
+                            setTeamASearch("");
+                            setTeamBSearch("");
                           }}
                         >
-                          <option value="">Select Category</option>
-                          {categories.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-                        </select>
+                          <SelectTrigger className="w-full bg-muted border border-border">
+                            <SelectValue placeholder="Select Category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories.map(c => (
+                              <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       {selectedMatchCategory && (
                         <>
                           <div className="space-y-2">
                             <label className="text-xs font-bold text-muted-foreground uppercase">Team A</label>
-                            <select
-                              className="w-full bg-muted border border-border rounded-lg p-2.5 text-sm"
+                            <div className="relative">
+                              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                              <Input 
+                                placeholder="Search Team A..." 
+                                value={teamASearch}
+                                onChange={(e) => setTeamASearch(e.target.value)}
+                                className="pl-8 h-8 mb-1 bg-muted/50 text-xs"
+                              />
+                            </div>
+                            <Select
                               value={teamAId}
-                              onChange={(e) => setTeamAId(e.target.value)}
+                              onValueChange={setTeamAId}
                             >
-                              <option value="">Select Team A</option>
-                              {registrations
-                                .filter(r => r.categoryId === selectedMatchCategory)
-                                .map(r => <option key={r._id} value={r._id}>{r.teamName} ({r.captainName})</option>)
-                              }
-                            </select>
+                              <SelectTrigger className="w-full bg-muted border border-border">
+                                <SelectValue placeholder="Select Team A" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {registrations
+                                  .filter(r => r.categoryId === selectedMatchCategory && 
+                                    (r.teamName.toLowerCase().includes(teamASearch.toLowerCase()) || 
+                                     r.captainName.toLowerCase().includes(teamASearch.toLowerCase())))
+                                  .map(r => (
+                                    <SelectItem key={r._id} value={r._id}>{r.teamName} ({r.captainName})</SelectItem>
+                                  ))
+                                }
+                              </SelectContent>
+                            </Select>
                           </div>
 
                           <div className="space-y-2">
                             <label className="text-xs font-bold text-muted-foreground uppercase">Team B</label>
-                            <select
-                              className="w-full bg-muted border border-border rounded-lg p-2.5 text-sm"
+                            <div className="relative">
+                              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                              <Input 
+                                placeholder="Search Team B..." 
+                                value={teamBSearch}
+                                onChange={(e) => setTeamBSearch(e.target.value)}
+                                className="pl-8 h-8 mb-1 bg-muted/50 text-xs"
+                              />
+                            </div>
+                            <Select
                               value={teamBId}
-                              onChange={(e) => setTeamBId(e.target.value)}
+                              onValueChange={setTeamBId}
                             >
-                              <option value="">Select Team B</option>
-                              {registrations
-                                .filter(r => r.categoryId === selectedMatchCategory && r._id !== teamAId)
-                                .map(r => <option key={r._id} value={r._id}>{r.teamName} ({r.captainName})</option>)
-                              }
-                            </select>
+                              <SelectTrigger className="w-full bg-muted border border-border">
+                                <SelectValue placeholder="Select Team B" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {registrations
+                                  .filter(r => r.categoryId === selectedMatchCategory && r._id !== teamAId && 
+                                    (r.teamName.toLowerCase().includes(teamBSearch.toLowerCase()) || 
+                                     r.captainName.toLowerCase().includes(teamBSearch.toLowerCase())))
+                                  .map(r => (
+                                    <SelectItem key={r._id} value={r._id}>{r.teamName} ({r.captainName})</SelectItem>
+                                  ))
+                                }
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <label className="text-xs font-bold text-muted-foreground uppercase">Date</label>
+                              <Input
+                                type="date"
+                                value={matchDate}
+                                onChange={(e) => setMatchDate(e.target.value)}
+                                className="bg-muted border border-border h-9"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <label className="text-xs font-bold text-muted-foreground uppercase">Time</label>
+                              <Input
+                                type="time"
+                                value={matchTime}
+                                onChange={(e) => setMatchTime(e.target.value)}
+                                className="bg-muted border border-border h-9"
+                              />
+                            </div>
                           </div>
 
                           <Button
                             className="w-full mt-2"
                             disabled={!teamAId || !teamBId}
                             onClick={async () => {
-                              const cat = categories.find(c => c.id === selectedMatchCategory);
-                              await createManualMatch({
-                                token: sessionToken,
-                                teamAId: teamAId as any,
-                                teamBId: teamBId as any,
-                                categoryId: selectedMatchCategory,
-                                categoryLabel: cat?.label ?? "",
-                              });
-                              setTeamAId("");
-                              setTeamBId("");
-                              alert("Match created!");
+                              try {
+                                const cat = categories.find(c => c.id === selectedMatchCategory);
+                                await createManualMatch({
+                                  token: sessionToken,
+                                  teamAId: teamAId as any,
+                                  teamBId: teamBId as any,
+                                  categoryId: selectedMatchCategory,
+                                  categoryLabel: cat?.label ?? "",
+                                  date: matchDate || undefined,
+                                  time: matchTime || undefined,
+                                });
+                                setTeamAId("");
+                                setTeamBId("");
+                                setMatchDate("");
+                                setMatchTime("");
+                                toast({
+                                  title: "Match Created",
+                                  description: "The manual match has been scheduled successfully.",
+                                });
+                              } catch (err: any) {
+                                toast({
+                                  title: "Error",
+                                  description: err.message || "Failed to create match",
+                                  variant: "destructive",
+                                });
+                              }
                             }}
                           >
                             Create Match
@@ -777,7 +916,8 @@ export default function AdminPage() {
                         </thead>
                         <tbody className="divide-y divide-border/50">
                           {matches.map((match) => (
-                            <tr key={match._id} className="hover:bg-muted/10 transition-colors">
+                            <Fragment key={match._id}>
+                              <tr className="hover:bg-muted/10 transition-colors">
                               <td className="p-4 font-medium">
                                 <div className="flex flex-col gap-1.5">
                                   <div className="flex flex-col">
@@ -800,8 +940,13 @@ export default function AdminPage() {
                                 </div>
                               </td>
                               <td className="p-4">
-                                <span className="px-2 py-0.5 rounded bg-muted text-xs border border-border">
-                                  {match.categoryLabel}
+                                <span className="px-2 py-0.5 rounded bg-muted text-xs border border-border flex flex-col items-center">
+                                  <span>{match.categoryLabel}</span>
+                                  {(match.date || match.time) && (
+                                    <span className="text-[9px] text-primary/70 mt-1">
+                                      {match.date} {match.time}
+                                    </span>
+                                  )}
                                 </span>
                               </td>
                               <td className="p-4">
@@ -811,6 +956,15 @@ export default function AdminPage() {
                                 </span>
                               </td>
                               <td className="p-4 text-right space-x-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className={`h-8 rounded-lg transition-all ${expandedMatchId === match._id ? 'bg-primary text-white border-primary' : 'border-primary/30 text-primary hover:bg-primary/10'}`}
+                                  onClick={() => setExpandedMatchId(expandedMatchId === match._id ? null : match._id)}
+                                >
+                                  {expandedMatchId === match._id ? "Hide Score" : "View Score"}
+                                </Button>
+
                                 {match.status === "scheduled" && (
                                   <>
                                     <Button
@@ -831,7 +985,30 @@ export default function AdminPage() {
                                 )}
                               </td>
                             </tr>
-                          ))}
+                            <AnimatePresence>
+                              {expandedMatchId === match._id && (
+                                <tr>
+                                  <td colSpan={4} className="p-0 border-none">
+                                    <motion.div
+                                      initial={{ height: 0, opacity: 0 }}
+                                      animate={{ height: "auto", opacity: 1 }}
+                                      exit={{ height: 0, opacity: 0 }}
+                                      className="overflow-hidden bg-muted/5 border-b border-border/50"
+                                    >
+                                      <div className="p-6">
+                                        <div className="flex items-center gap-2 mb-4">
+                                          <BarChart3 className="h-4 w-4 text-primary" />
+                                          <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Detailed Scoreboard</h4>
+                                        </div>
+                                        <ScoreboardTable matchId={match._id} />
+                                      </div>
+                                    </motion.div>
+                                  </td>
+                                </tr>
+                              )}
+                            </AnimatePresence>
+                          </Fragment>
+                        ))}
                         {matches.length === 0 && (
                           <tr>
                             <td colSpan={4} className="p-8 text-center text-muted-foreground italic">
@@ -865,6 +1042,17 @@ export default function AdminPage() {
                         onChange={(e) => setSearchQuery(e.target.value)}
                       />
                     </div>
+                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                      <SelectTrigger className="w-[200px] h-10 bg-muted/30 border-border">
+                        <SelectValue placeholder="All Categories" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Categories</SelectItem>
+                        {categories.map(cat => (
+                          <SelectItem key={cat.id} value={cat.id}>{cat.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <button
                       onClick={() => setShowDuplicatesOnly(prev => !prev)}
                       className={`relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all ${
