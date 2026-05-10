@@ -84,6 +84,18 @@ export const upsert = mutation({
       dots: v.optional(v.number()), maidens: v.optional(v.number()), extras: v.optional(v.number()), points: v.optional(v.number())
     }))),
     showScoreboard: v.optional(v.boolean()),
+    detailedBallHistory: v.optional(v.array(v.object({
+      over: v.number(),
+      ball: v.number(),
+      runs: v.number(),
+      extraRuns: v.optional(v.number()),
+      isWicket: v.boolean(),
+      bowler: v.string(),
+      batsman: v.string(),
+      event: v.string(),
+      inning: v.number(),
+      timestamp: v.number(),
+    }))),
   },
   handler: async (ctx, args) => {
     await requireAdminSession(ctx, args.token);
@@ -127,6 +139,7 @@ export const upsert = mutation({
       bowlersInning1: args.bowlersInning1,
       batsmenInning2: args.batsmenInning2,
       bowlersInning2: args.bowlersInning2,
+      detailedBallHistory: args.detailedBallHistory,
       showScoreboard: args.showScoreboard,
     });
 
@@ -200,6 +213,7 @@ export const reset = mutation({
         bowlersInning1: [],
         batsmenInning2: [],
         bowlersInning2: [],
+        detailedBallHistory: [],
         updatedAt: Date.now(),
       });
       return existing._id;
@@ -228,6 +242,7 @@ export const reset = mutation({
       bowlersInning1: [],
       batsmenInning2: [],
       bowlersInning2: [],
+      detailedBallHistory: [],
       updatedAt: Date.now(),
     });
   },

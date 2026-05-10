@@ -133,6 +133,18 @@ export default defineSchema({
       points: v.optional(v.number())
     }))),
     showScoreboard: v.optional(v.boolean()),
+    detailedBallHistory: v.optional(v.array(v.object({
+      over: v.number(),
+      ball: v.number(),
+      runs: v.number(),
+      extraRuns: v.optional(v.number()),
+      isWicket: v.boolean(),
+      bowler: v.string(),
+      batsman: v.string(),
+      event: v.string(),
+      inning: v.number(),
+      timestamp: v.number(),
+    }))),
     updatedAt: v.number(),
   }).index("by_key", ["key"])
     .index("by_matchId", ["matchId"])

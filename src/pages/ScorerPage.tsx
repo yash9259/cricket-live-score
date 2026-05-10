@@ -23,9 +23,14 @@ import {
 } from "@/components/ui/select";
 import { MatchSummaryModal } from "@/components/MatchSummaryModal";
 import { useToast } from "@/components/ui/use-toast";
+import { ScoreBook } from "@/components/ScoreBook";
+import { BookOpen } from "lucide-react";
+
 
 interface BatsmanStat { name: string; runs: number; balls: number; isOut: boolean; dots?: number; points?: number; }
 interface BowlerStat { name: string; runs: number; wickets: number; balls: number; dots?: number; maidens?: number; extras?: number; points?: number; }
+interface DetailedBall { over: number; ball: number; runs: number; extraRuns?: number; isWicket: boolean; bowler: string; batsman: string; event: string; inning: number; timestamp: number; }
+
 
 const ADMIN_SESSION_STORAGE_KEY = "adminSessionToken";
 
@@ -85,6 +90,7 @@ export default function ScorerPage() {
   const [bowlerBalls, setBowlerBalls] = useState(0);
   const [freeHitPending, setFreeHitPending] = useState(false);
   const [ballHistory, setBallHistory] = useState<string[]>([]);
+  const [detailedBallHistory, setDetailedBallHistory] = useState<DetailedBall[]>([]);
   const [pendingBatsmanReplacements, setPendingBatsmanReplacements] = useState(0);
 
   const [batsmenInning1, setBatsmenInning1] = useState<BatsmanStat[]>([]);
@@ -92,6 +98,7 @@ export default function ScorerPage() {
   const [batsmenInning2, setBatsmenInning2] = useState<BatsmanStat[]>([]);
   const [bowlersInning2, setBowlersInning2] = useState<BowlerStat[]>([]);
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
+  const [isScoreBookOpen, setIsScoreBookOpen] = useState(false);
   const [showScoreboardOnDisplay, setShowScoreboardOnDisplay] = useState(false);
 
   const [isFinishing, setIsFinishing] = useState(false);
@@ -183,6 +190,7 @@ export default function ScorerPage() {
     setBowlersInning1(live.bowlersInning1 || []);
     setBatsmenInning2(live.batsmenInning2 || []);
     setBowlersInning2(live.bowlersInning2 || []);
+    setDetailedBallHistory(live.detailedBallHistory || []);
     setShowScoreboardOnDisplay(live.showScoreboard || false);
   }, [live]);
 
@@ -227,6 +235,7 @@ export default function ScorerPage() {
       bowlersInning1: next.bowlersInning1 !== undefined ? next.bowlersInning1 : bowlersInning1,
       batsmenInning2: next.batsmenInning2 !== undefined ? next.batsmenInning2 : batsmenInning2,
       bowlersInning2: next.bowlersInning2 !== undefined ? next.bowlersInning2 : bowlersInning2,
+      detailedBallHistory: next.detailedBallHistory !== undefined ? next.detailedBallHistory : detailedBallHistory,
       showScoreboard: next.showScoreboard !== undefined ? next.showScoreboard : showScoreboardOnDisplay,
     });
   };
@@ -356,7 +365,7 @@ export default function ScorerPage() {
   const snapshotCurrent = () => {
     setHistory((prev) => [...prev, {
       battingTeam, bowlingTeam, striker, nonStriker, bowler, runs, wickets, overs, balls, lastEvent, inning, target,
-      strikerRuns, strikerBalls, nonStrikerRuns, nonStrikerBalls, bowlerRuns, bowlerWickets, bowlerBalls, outPlayers, freeHitPending, ballHistory, pendingBatsmanReplacements,
+      strikerRuns, strikerBalls, nonStrikerRuns, nonStrikerBalls, bowlerRuns, bowlerWickets, bowlerBalls, outPlayers, freeHitPending, ballHistory, detailedBallHistory, pendingBatsmanReplacements,
       batsmenInning1, bowlersInning1, batsmenInning2, bowlersInning2
     }]);
   };
@@ -430,6 +439,21 @@ export default function ScorerPage() {
       animationId: (isSuperBallMode || effectiveValue === 4 || effectiveValue === 6) ? Date.now() : undefined,
     };
 
+    const newDetailedBall: DetailedBall = {
+      over: overs,
+      ball: balls + 1,
+      runs: effectiveValue,
+      isWicket: false,
+      bowler,
+      batsman: striker,
+      event: eventLabel,
+      inning,
+      timestamp: Date.now(),
+    };
+    const nextDetailedBallHistory = [...detailedBallHistory, newDetailedBall];
+    Object.assign(next, { detailedBallHistory: nextDetailedBallHistory });
+
+
     const statsUpdates = updatePlayerStats({
         batsmanName: striker,
         runsScored: effectiveValue,
@@ -462,6 +486,7 @@ export default function ScorerPage() {
     setBowlerBalls(next.bowlerBalls);
     setFreeHitPending(false);
     setBallHistory(nextBallHistory);
+    setDetailedBallHistory(nextDetailedBallHistory);
     await syncScore(next);
 
     // 2nd Inning Win Condition
@@ -539,6 +564,21 @@ export default function ScorerPage() {
       outPlayers: nextOutPlayers,
     };
 
+    const newDetailedBall: DetailedBall = {
+      over: overs,
+      ball: balls + 1,
+      runs: 0,
+      isWicket: true,
+      bowler,
+      batsman: striker,
+      event: eventLabel,
+      inning,
+      timestamp: Date.now(),
+    };
+    const nextDetailedBallHistory = [...detailedBallHistory, newDetailedBall];
+    Object.assign(next, { detailedBallHistory: nextDetailedBallHistory });
+
+
     let statsUpdates = updatePlayerStats({
         batsmanName: striker,
         runsScored: 0,
@@ -581,6 +621,7 @@ export default function ScorerPage() {
     setOutPlayers(next.outPlayers);
     setFreeHitPending(false);
     setBallHistory(nextBallHistory);
+    setDetailedBallHistory(nextDetailedBallHistory);
     setPendingBatsmanReplacements(isSuperBallMode ? 2 : 1);
     await syncScore(next);
 
@@ -626,6 +667,24 @@ export default function ScorerPage() {
       animationId: label === "NO BALL" ? Date.now() : undefined,
     };
 
+    const newDetailedBall: DetailedBall = {
+      over: overs,
+      ball: balls, // Extras don't increment ball count in box cricket usually, but let's see. 
+      // Actually balls doesn't increment here, so we use current balls index or similar.
+      // In this code, handleExtra doesn't call addBallProgress.
+      runs: 2,
+      extraRuns: 2,
+      isWicket: false,
+      bowler,
+      batsman: striker,
+      event: label,
+      inning,
+      timestamp: Date.now(),
+    };
+    const nextDetailedBallHistory = [...detailedBallHistory, newDetailedBall];
+    Object.assign(next, { detailedBallHistory: nextDetailedBallHistory });
+
+
     const statsUpdates = updatePlayerStats({
         bowlerName: bowler,
         runsConceded: 2,
@@ -642,6 +701,7 @@ export default function ScorerPage() {
     if (label === "NO BALL") {
       setFreeHitPending(true);
     }
+    setDetailedBallHistory(nextDetailedBallHistory);
     await syncScore(next);
 
     // 2nd Inning Win Condition
@@ -666,6 +726,22 @@ export default function ScorerPage() {
       animationId: Date.now(),
     };
 
+    const newDetailedBall: DetailedBall = {
+      over: overs,
+      ball: balls,
+      runs: totalAdded,
+      extraRuns: 2,
+      isWicket: false,
+      bowler,
+      batsman: striker,
+      event: eventLabel,
+      inning,
+      timestamp: Date.now(),
+    };
+    const nextDetailedBallHistory = [...detailedBallHistory, newDetailedBall];
+    Object.assign(next, { detailedBallHistory: nextDetailedBallHistory });
+
+
     const statsUpdates = updatePlayerStats({
         bowlerName: bowler,
         runsConceded: totalAdded,
@@ -680,6 +756,7 @@ export default function ScorerPage() {
     setLastEvent(next.lastEvent);
     setBowlerRuns(next.bowlerRuns);
     setFreeHitPending(true);
+    setDetailedBallHistory(nextDetailedBallHistory);
     await syncScore(next);
 
     if (inning === 2 && target && nextRuns >= target) {
@@ -715,6 +792,7 @@ export default function ScorerPage() {
     setOutPlayers(prev.outPlayers || []);
     setFreeHitPending(prev.freeHitPending || false);
     setBallHistory(prev.ballHistory || []);
+    setDetailedBallHistory(prev.detailedBallHistory || []);
     setPendingBatsmanReplacements(prev.pendingBatsmanReplacements || 0);
     setBatsmenInning1(prev.batsmenInning1 || []);
     setBowlersInning1(prev.bowlersInning1 || []);
@@ -756,6 +834,7 @@ export default function ScorerPage() {
     setBowlersInning1([]);
     setBatsmenInning2([]);
     setBowlersInning2([]);
+    setDetailedBallHistory([]);
 
     await reset({ token: sessionToken });
   };
@@ -791,6 +870,7 @@ export default function ScorerPage() {
         ballHistory: [],
         batsmenInning2: [],
         bowlersInning2: [],
+        detailedBallHistory,
       };
 
       setHistory([]);
@@ -847,6 +927,7 @@ export default function ScorerPage() {
         ballHistory: [],
         batsmenInning2: [],
         bowlersInning2: [],
+        detailedBallHistory,
       };
 
       setBattingTeam(next.battingTeam);
@@ -1491,6 +1572,15 @@ export default function ScorerPage() {
                  >
                    Open Full Scorecard
                  </Button>
+
+                 <Button 
+                    onClick={() => setIsScoreBookOpen(true)} 
+                    variant="outline" 
+                    className="w-full text-xs font-bold uppercase tracking-wider py-5 border-primary/30 text-primary hover:bg-primary/5"
+                  >
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    Check Score Book
+                  </Button>
                  
                  {isMatchOver && (
                    <Button 
@@ -1611,6 +1701,26 @@ export default function ScorerPage() {
           bowlersInning2
         }}
       />
+      {/* Score Book Modal */}
+      <Dialog open={isScoreBookOpen} onOpenChange={setIsScoreBookOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-slate-950 text-slate-50 border-primary/30">
+          <div className="py-4">
+            <ScoreBook 
+              history={detailedBallHistory} 
+              inning1Team={inning === 1 ? battingTeam : bowlingTeam}
+              inning2Team={inning === 2 ? battingTeam : bowlingTeam}
+              batsmenInning1={batsmenInning1}
+              bowlersInning1={bowlersInning1}
+              batsmenInning2={batsmenInning2}
+              bowlersInning2={bowlersInning2}
+            />
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setIsScoreBookOpen(false)} className="w-full">Close Score Book</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
