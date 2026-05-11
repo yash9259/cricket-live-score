@@ -212,5 +212,8 @@ export default function MatchDetailPage() {
         <ScoreboardTable matchId={matchId} />
       </div>
     </div>
-  );
+  </div>
+);
 }
+
+
