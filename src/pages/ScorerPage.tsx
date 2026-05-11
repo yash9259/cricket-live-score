@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState, Fragment } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { RotateCcw, UserCircle2, ArrowRightLeft, BarChart3, Trophy, Activity, Zap, History, LayoutDashboard, ChevronRight, AlertCircle, Info } from "lucide-react";
+import { RotateCcw, UserCircle2, ArrowRightLeft, BarChart3, Trophy, Activity, Zap, History, LayoutDashboard, ChevronRight, AlertCircle, Info, Edit2 } from "lucide-react";
 import { Navigate, Link } from "react-router-dom";
 import { api } from "../../convex/_generated/api";
 import { POINTS_CONFIG, calculateBattingPoints, calculateBowlingPoints } from "../../convex/points";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -27,7 +28,7 @@ import { ScoreBook } from "@/components/ScoreBook";
 import { BookOpen } from "lucide-react";
 
 
-interface BatsmanStat { name: string; runs: number; balls: number; isOut: boolean; dots?: number; points?: number; }
+interface BatsmanStat { name: string; runs: number; balls: number; isOut: boolean; fours?: number; sixes?: number; dots?: number; points?: number; }
 interface BowlerStat { name: string; runs: number; wickets: number; balls: number; dots?: number; maidens?: number; extras?: number; points?: number; }
 interface DetailedBall { over: number; ball: number; runs: number; extraRuns?: number; isWicket: boolean; bowler: string; batsman: string; event: string; inning: number; timestamp: number; }
 
@@ -58,6 +59,8 @@ export default function ScorerPage() {
   const upsert = useMutation(api.liveScore.upsert);
   const reset = useMutation(api.liveScore.reset);
   const completeMatch = useMutation(api.matches.completeMatch);
+  const renamePlayerMutation = useMutation(api.registrations.renamePlayer);
+  const renamePlayerGloballyMutation = useMutation(api.registrations.renamePlayerGlobally);
 
   const match = useQuery(api.matches.getById, live?.matchId ? { id: live.matchId } : "skip");
   const matches = useQuery(api.matches.list) ?? [];
@@ -97,9 +100,15 @@ export default function ScorerPage() {
   const [bowlersInning1, setBowlersInning1] = useState<BowlerStat[]>([]);
   const [batsmenInning2, setBatsmenInning2] = useState<BatsmanStat[]>([]);
   const [bowlersInning2, setBowlersInning2] = useState<BowlerStat[]>([]);
+  const [strikerFours, setStrikerFours] = useState(0);
+  const [strikerSixes, setStrikerSixes] = useState(0);
+  const [nonStrikerFours, setNonStrikerFours] = useState(0);
+  const [nonStrikerSixes, setNonStrikerSixes] = useState(0);
   const [isSummaryModalOpen, setIsSummaryModalOpen] = useState(false);
   const [isScoreBookOpen, setIsScoreBookOpen] = useState(false);
   const [showScoreboardOnDisplay, setShowScoreboardOnDisplay] = useState(false);
+  const [tossWinner, setTossWinner] = useState<string>("");
+  const [tossDecision, setTossDecision] = useState<"bat" | "bowl" | "">("");
 
   const [isFinishing, setIsFinishing] = useState(false);
   const [history, setHistory] = useState<Array<any>>([]);
@@ -111,6 +120,9 @@ export default function ScorerPage() {
   const [tempStriker, setTempStriker] = useState("");
   const [tempNonStriker, setTempNonStriker] = useState("");
   const [shouldOpenBowlerAfterBatsman, setShouldOpenBowlerAfterBatsman] = useState(false);
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
+  const [playerToRename, setPlayerToRename] = useState("");
+  const [newPlayerName, setNewPlayerName] = useState("");
 
   // Super Ball state
   const [showSuperBallPopup, setShowSuperBallPopup] = useState(false);
@@ -128,23 +140,63 @@ export default function ScorerPage() {
     return registrations?.map(r => r.teamName) || [];
   }, [registrations]);
 
+  const selectedMatch = useMemo(() => matches.find(m => m._id === matchId), [matches, matchId]);
+
   const battingPlayers = useMemo(() => {
-    const team = registrations?.find(r => r.teamName === battingTeam);
-    if (!team) return [];
-    return [team.captainName, ...team.players.map(p => p.name)];
-  }, [registrations, battingTeam]);
+    if (!registrations || !battingTeam) return [];
+    
+    // 1. Try finding by ID from selected match first (most reliable)
+    let team = null;
+    if (selectedMatch) {
+      const targetId = battingTeam === (selectedMatch as any).teamAName ? (selectedMatch as any).teamAId : 
+                      battingTeam === (selectedMatch as any).teamBName ? (selectedMatch as any).teamBId : null;
+      if (targetId) {
+        team = registrations.find(r => r._id === targetId);
+      }
+    }
+    
+    // 2. Fallback to name-based search
+    if (!team) {
+      const bTeamLower = battingTeam.trim().toLowerCase();
+      team = registrations.find(r => r.teamName.trim().toLowerCase() === bTeamLower);
+    }
+
+    if (!team) return [striker, nonStriker].filter(Boolean) as string[];
+    
+    const players = [team.captainName, ...team.players.map(p => (p as any).name)];
+    const current = [striker, nonStriker].filter(n => n && !players.includes(n));
+    return [...new Set([...players, ...current])];
+  }, [registrations, battingTeam, striker, nonStriker, selectedMatch]);
 
   const bowlingPlayers = useMemo(() => {
-    const team = registrations?.find(r => r.teamName === bowlingTeam);
-    if (!team) return [];
-    return [team.captainName, ...team.players.map(p => p.name)];
-  }, [registrations, bowlingTeam]);
+    if (!registrations || !bowlingTeam) return [];
+
+    // 1. Try finding by ID from selected match first
+    let team = null;
+    if (selectedMatch) {
+      const targetId = bowlingTeam === (selectedMatch as any).teamAName ? (selectedMatch as any).teamAId : 
+                      bowlingTeam === (selectedMatch as any).teamBName ? (selectedMatch as any).teamBId : null;
+      if (targetId) {
+        team = registrations.find(r => r._id === targetId);
+      }
+    }
+    
+    // 2. Fallback to name-based search
+    if (!team) {
+      const bTeamLower = bowlingTeam.trim().toLowerCase();
+      team = registrations.find(r => r.teamName.trim().toLowerCase() === bTeamLower);
+    }
+
+    if (!team) return [bowler].filter(Boolean) as string[];
+
+    const players = [team.captainName, ...team.players.map(p => (p as any).name)];
+    const current = [bowler].filter(n => n && !players.includes(n));
+    return [...new Set([...players, ...current])];
+  }, [registrations, bowlingTeam, bowler, selectedMatch]);
 
   // Filtered team options to prevent duplicate teams
   const filteredBattingTeamOptions = useMemo(() => teamOptions.filter(name => name !== bowlingTeam), [teamOptions, bowlingTeam]);
   const filteredBowlingTeamOptions = useMemo(() => teamOptions.filter(name => name !== battingTeam), [teamOptions, battingTeam]);
-
-  const selectedMatch = useMemo(() => matches.find(m => m._id === matchId), [matches, matchId]);
 
   const availableBattingOptions = useMemo(() => {
     if (selectedMatch) {
@@ -184,6 +236,10 @@ export default function ScorerPage() {
     setBowlerRuns(live.bowlerRuns || 0);
     setBowlerWickets(live.bowlerWickets || 0);
     setBowlerBalls(live.bowlerBalls || 0);
+    setStrikerFours(live.strikerFours || 0);
+    setStrikerSixes(live.strikerSixes || 0);
+    setNonStrikerFours(live.nonStrikerFours || 0);
+    setNonStrikerSixes(live.nonStrikerSixes || 0);
     setBallHistory(live.ballHistory || []);
     setOutPlayers(live.outPlayers || []);
     setBatsmenInning1(live.batsmenInning1 || []);
@@ -192,6 +248,8 @@ export default function ScorerPage() {
     setBowlersInning2(live.bowlersInning2 || []);
     setDetailedBallHistory(live.detailedBallHistory || []);
     setShowScoreboardOnDisplay(live.showScoreboard || false);
+    setTossWinner(live.tossWinner || "");
+    setTossDecision(live.tossDecision || "");
   }, [live]);
 
   const scoreText = `${runs}/${wickets} (${overs}.${balls})`;
@@ -222,8 +280,12 @@ export default function ScorerPage() {
       firstInningScore: next.firstInningScore !== undefined ? next.firstInningScore : firstInningScore,
       strikerRuns: next.strikerRuns !== undefined ? next.strikerRuns : strikerRuns,
       strikerBalls: next.strikerBalls !== undefined ? next.strikerBalls : strikerBalls,
+      strikerFours: next.strikerFours !== undefined ? next.strikerFours : strikerFours,
+      strikerSixes: next.strikerSixes !== undefined ? next.strikerSixes : strikerSixes,
       nonStrikerRuns: next.nonStrikerRuns !== undefined ? next.nonStrikerRuns : nonStrikerRuns,
       nonStrikerBalls: next.nonStrikerBalls !== undefined ? next.nonStrikerBalls : nonStrikerBalls,
+      nonStrikerFours: next.nonStrikerFours !== undefined ? next.nonStrikerFours : nonStrikerFours,
+      nonStrikerSixes: next.nonStrikerSixes !== undefined ? next.nonStrikerSixes : nonStrikerSixes,
       bowlerRuns: next.bowlerRuns !== undefined ? next.bowlerRuns : bowlerRuns,
       bowlerWickets: next.bowlerWickets !== undefined ? next.bowlerWickets : bowlerWickets,
       bowlerBalls: next.bowlerBalls !== undefined ? next.bowlerBalls : bowlerBalls,
@@ -237,6 +299,8 @@ export default function ScorerPage() {
       bowlersInning2: next.bowlersInning2 !== undefined ? next.bowlersInning2 : bowlersInning2,
       detailedBallHistory: next.detailedBallHistory !== undefined ? next.detailedBallHistory : detailedBallHistory,
       showScoreboard: next.showScoreboard !== undefined ? next.showScoreboard : showScoreboardOnDisplay,
+      tossWinner: next.tossWinner !== undefined ? next.tossWinner : tossWinner,
+      tossDecision: next.tossDecision !== undefined ? next.tossDecision : tossDecision,
     });
   };
 
@@ -254,6 +318,8 @@ export default function ScorerPage() {
       isMaiden?: boolean;
       isExtra?: boolean;
       isSuperBall?: boolean;
+      isFour?: boolean;
+      isSix?: boolean;
       currentBatsmen?: BatsmanStat[];
       currentBowlers?: BowlerStat[];
     }
@@ -269,6 +335,8 @@ export default function ScorerPage() {
         const newRuns = b.runs + (params.runsScored || 0);
         const newBalls = b.balls + (params.ballsFaced || 0);
         const newDots = (b.dots || 0) + (params.isDot ? 1 : 0);
+        const newFours = (b.fours || 0) + (params.isFour ? 1 : 0);
+        const newSixes = (b.sixes || 0) + (params.isSix ? 1 : 0);
         const newIsOut = params.isOut !== undefined ? params.isOut : b.isOut;
         
         const ballPoints = calculateBattingPoints({
@@ -283,6 +351,8 @@ export default function ScorerPage() {
           runs: newRuns,
           balls: newBalls,
           dots: newDots,
+          fours: newFours,
+          sixes: newSixes,
           isOut: newIsOut,
           points: (b.points || 0) + ballPoints
         };
@@ -298,6 +368,8 @@ export default function ScorerPage() {
           runs: params.runsScored || 0, 
           balls: params.ballsFaced || 0, 
           isOut: params.isOut || false,
+          fours: params.isFour ? 1 : 0,
+          sixes: params.isSix ? 1 : 0,
           dots: params.isDot ? 1 : 0,
           points: ballPoints
         });
@@ -386,8 +458,12 @@ export default function ScorerPage() {
     let nextNonStriker = nonStriker;
     let nextStrikerRuns = strikerRuns + effectiveValue;
     let nextStrikerBalls = strikerBalls + 1;
+    let nextStrikerFours = strikerFours + (value === 4 ? 1 : 0);
+    let nextStrikerSixes = strikerSixes + (value === 6 ? 1 : 0);
     let nextNonStrikerRuns = nonStrikerRuns;
     let nextNonStrikerBalls = nonStrikerBalls;
+    let nextNonStrikerFours = nonStrikerFours;
+    let nextNonStrikerSixes = nonStrikerSixes;
     let overChanged = false;
 
     if (effectiveValue % 2 !== 0) {
@@ -396,10 +472,16 @@ export default function ScorerPage() {
       // Swap stats for state
       const tempR = nextStrikerRuns;
       const tempB = nextStrikerBalls;
+      const temp4 = nextStrikerFours;
+      const temp6 = nextStrikerSixes;
       nextStrikerRuns = nextNonStrikerRuns;
       nextStrikerBalls = nextNonStrikerBalls;
+      nextStrikerFours = nextNonStrikerFours;
+      nextStrikerSixes = nextNonStrikerSixes;
       nextNonStrikerRuns = tempR;
       nextNonStrikerBalls = tempB;
+      nextNonStrikerFours = temp4;
+      nextNonStrikerSixes = temp6;
     }
 
     if (nextBalls === 0 && nextOvers > overs) {
@@ -409,10 +491,16 @@ export default function ScorerPage() {
       // Swap stats for state
       const tempR = nextStrikerRuns;
       const tempB = nextStrikerBalls;
+      const temp4 = nextStrikerFours;
+      const temp6 = nextStrikerSixes;
       nextStrikerRuns = nextNonStrikerRuns;
       nextStrikerBalls = nextNonStrikerBalls;
+      nextStrikerFours = nextNonStrikerFours;
+      nextStrikerSixes = nextNonStrikerSixes;
       nextNonStrikerRuns = tempR;
       nextNonStrikerBalls = tempB;
+      nextNonStrikerFours = temp4;
+      nextNonStrikerSixes = temp6;
       overChanged = true;
     }
 
@@ -429,8 +517,12 @@ export default function ScorerPage() {
       bowler: overChanged ? "" : bowler,
       strikerRuns: nextStrikerRuns,
       strikerBalls: nextStrikerBalls,
+      strikerFours: nextStrikerFours,
+      strikerSixes: nextStrikerSixes,
       nonStrikerRuns: nextNonStrikerRuns,
       nonStrikerBalls: nextNonStrikerBalls,
+      nonStrikerFours: nextNonStrikerFours,
+      nonStrikerSixes: nextNonStrikerSixes,
       bowlerRuns: bowlerRuns + effectiveValue,
       bowlerBalls: bowlerBalls + 1,
       showAnimation: isSuperBallMode
@@ -462,6 +554,8 @@ export default function ScorerPage() {
         runsConceded: effectiveValue,
         ballsBowled: 1,
         isDot: effectiveValue === 0,
+        isFour: value === 4,
+        isSix: value === 6,
         isSuperBall: isSuperBallMode
     });
 
@@ -480,8 +574,12 @@ export default function ScorerPage() {
     setBowler(next.bowler);
     setStrikerRuns(next.strikerRuns);
     setStrikerBalls(next.strikerBalls);
+    setStrikerFours(next.strikerFours);
+    setStrikerSixes(next.strikerSixes);
     setNonStrikerRuns(next.nonStrikerRuns);
     setNonStrikerBalls(next.nonStrikerBalls);
+    setNonStrikerFours(next.nonStrikerFours);
+    setNonStrikerSixes(next.nonStrikerSixes);
     setBowlerRuns(next.bowlerRuns);
     setBowlerBalls(next.bowlerBalls);
     setFreeHitPending(false);
@@ -743,6 +841,9 @@ export default function ScorerPage() {
 
 
     const statsUpdates = updatePlayerStats({
+        batsmanName: striker,
+        runsScored: extraRuns,
+        ballsFaced: extraRuns > 0 ? 1 : 0,
         bowlerName: bowler,
         runsConceded: totalAdded,
         isExtra: true,
@@ -755,6 +856,15 @@ export default function ScorerPage() {
     setRuns(next.runs);
     setLastEvent(next.lastEvent);
     setBowlerRuns(next.bowlerRuns);
+    
+    // Update local striker stats if it's the current striker
+    if (extraRuns > 0) {
+      setStrikerRuns(strikerRuns + extraRuns);
+      setStrikerBalls(strikerBalls + 1);
+      next.strikerRuns = strikerRuns + extraRuns;
+      next.strikerBalls = strikerBalls + 1;
+    }
+
     setFreeHitPending(true);
     setDetailedBallHistory(nextDetailedBallHistory);
     await syncScore(next);
@@ -800,6 +910,71 @@ export default function ScorerPage() {
     setBowlersInning2(prev.bowlersInning2 || []);
 
     await syncScore(prev);
+  };
+
+  const handleRenamePlayer = async () => {
+    if (!playerToRename || !newPlayerName || playerToRename === newPlayerName) {
+      setIsRenameModalOpen(false);
+      return;
+    }
+
+    snapshotCurrent();
+
+    const rename = (name: string) => {
+      if (!name) return name;
+      const cleanTarget = playerToRename.trim().toLowerCase();
+      return name.trim().toLowerCase() === cleanTarget ? newPlayerName.trim() : name;
+    };
+
+    const next = {
+      striker: rename(striker),
+      nonStriker: rename(nonStriker),
+      bowler: rename(bowler),
+      outPlayers: outPlayers.map(rename),
+      batsmenInning1: batsmenInning1.map(b => b.name.trim().toLowerCase() === playerToRename.trim().toLowerCase() ? { ...b, name: newPlayerName.trim() } : b),
+      bowlersInning1: bowlersInning1.map(b => b.name.trim().toLowerCase() === playerToRename.trim().toLowerCase() ? { ...b, name: newPlayerName.trim() } : b),
+      batsmenInning2: batsmenInning2.map(b => b.name.trim().toLowerCase() === playerToRename.trim().toLowerCase() ? { ...b, name: newPlayerName.trim() } : b),
+      bowlersInning2: bowlersInning2.map(b => b.name.trim().toLowerCase() === playerToRename.trim().toLowerCase() ? { ...b, name: newPlayerName.trim() } : b),
+      detailedBallHistory: detailedBallHistory.map(bh => ({
+        ...bh,
+        batsman: rename(bh.batsman),
+        bowler: rename(bh.bowler)
+      })),
+    };
+
+    // 1. Update local states first for immediate UI feedback
+    setStriker(next.striker);
+    setNonStriker(next.nonStriker);
+    setBowler(next.bowler);
+    setOutPlayers(next.outPlayers);
+    setBatsmenInning1(next.batsmenInning1);
+    setBowlersInning1(next.bowlersInning1);
+    setBatsmenInning2(next.batsmenInning2);
+    setBowlersInning2(next.bowlersInning2);
+    setDetailedBallHistory(next.detailedBallHistory);
+
+    setIsRenameModalOpen(false);
+    setPlayerToRename("");
+    setNewPlayerName("");
+
+    // 2. Sync to liveScores table immediately to prevent useEffect revert
+    await syncScore(next);
+
+    // 3. Persist to registrations in the background (globally)
+    try {
+      await renamePlayerGloballyMutation({
+        token: sessionToken,
+        oldName: playerToRename,
+        newName: newPlayerName
+      });
+    } catch (e) {
+      console.error("Failed to rename in registrations", e);
+    }
+
+    toast({
+      title: "Player Renamed",
+      description: `"${playerToRename}" is now "${newPlayerName}" (Updated globally)`,
+    });
   };
 
   const handleReset = async () => {
@@ -1210,8 +1385,60 @@ export default function ScorerPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                  <div className="flex items-end gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-border/50">
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Toss Winner</Label>
+                    <Select 
+                      value={tossWinner} 
+                      onValueChange={async (val) => {
+                        setTossWinner(val);
+                        if (matchId) {
+                          await syncScore({ tossWinner: val });
+                          // Also update match record
+                          // Note: we might need a separate call or just rely on liveScore for display
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="bg-muted/30 border-border h-10">
+                        <SelectValue placeholder="Toss Winner" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {selectedMatch ? (
+                          <>
+                            <SelectItem value={selectedMatch.teamAName}>{selectedMatch.teamAName}</SelectItem>
+                            <SelectItem value={selectedMatch.teamBName}>{selectedMatch.teamBName}</SelectItem>
+                          </>
+                        ) : (
+                          teamOptions.map(name => (
+                            <SelectItem key={name} value={name}>{name}</SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs text-muted-foreground">Decision</Label>
+                    <Select 
+                      value={tossDecision} 
+                      onValueChange={async (val: any) => {
+                        setTossDecision(val);
+                        if (matchId) {
+                          await syncScore({ tossDecision: val });
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="bg-muted/30 border-border h-10">
+                        <SelectValue placeholder="Decision" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="bat">Choose to Bat</SelectItem>
+                        <SelectItem value="bowl">Choose to Bowl</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex items-end">
                     <Button 
                       onClick={handleInningChange} 
                       variant="outline" 
@@ -1326,18 +1553,42 @@ export default function ScorerPage() {
                     <div className="space-y-3">
                       <div className={`flex justify-between items-center ${!striker ? 'opacity-50' : ''}`}>
                          <div className="flex items-center gap-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                            <span className="font-bold text-sm truncate max-w-[120px]">{striker || "Striker"}</span>
-                         </div>
+                             <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                             <span className="font-bold text-sm truncate max-w-[120px]">{striker || "Striker"}</span>
+                             {striker && (
+                               <button 
+                                 onClick={() => {
+                                   setPlayerToRename(striker);
+                                   setNewPlayerName(striker);
+                                   setIsRenameModalOpen(true);
+                                 }}
+                                 className="p-1 hover:bg-primary/20 rounded transition-colors"
+                               >
+                                 <Edit2 className="h-3 w-3 text-primary" />
+                               </button>
+                             )}
+                          </div>
                          <span className="font-mono text-xs font-bold tabular-nums">
                             {strikerRuns}<span className="text-muted-foreground font-normal">({strikerBalls})</span>
                          </span>
                       </div>
                       <div className={`flex justify-between items-center ${!nonStriker ? 'opacity-50' : ''}`}>
                          <div className="flex items-center gap-2 opacity-70">
-                            <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-                            <span className="text-sm truncate max-w-[120px]">{nonStriker || "Non-Striker"}</span>
-                         </div>
+                             <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
+                             <span className="text-sm truncate max-w-[120px]">{nonStriker || "Non-Striker"}</span>
+                             {nonStriker && (
+                               <button 
+                                 onClick={() => {
+                                   setPlayerToRename(nonStriker);
+                                   setNewPlayerName(nonStriker);
+                                   setIsRenameModalOpen(true);
+                                 }}
+                                 className="p-1 hover:bg-muted-foreground/20 rounded transition-colors"
+                               >
+                                 <Edit2 className="h-3 w-3 text-muted-foreground" />
+                               </button>
+                             )}
+                          </div>
                          <span className="font-mono text-xs text-muted-foreground tabular-nums">
                             {nonStrikerRuns}<span>({nonStrikerBalls})</span>
                          </span>
@@ -1355,6 +1606,18 @@ export default function ScorerPage() {
                        <div className="flex items-center gap-2">
                           <div className="w-1.5 h-1.5 rounded-full bg-neon-orange" />
                           <span className="font-bold text-sm truncate max-w-[120px] text-neon-orange">{bowler || "Bowler"}</span>
+                          {bowler && (
+                             <button 
+                               onClick={() => {
+                                 setPlayerToRename(bowler);
+                                 setNewPlayerName(bowler);
+                                 setIsRenameModalOpen(true);
+                               }}
+                               className="p-1 hover:bg-neon-orange/20 rounded transition-colors"
+                             >
+                               <Edit2 className="h-3 w-3 text-neon-orange" />
+                             </button>
+                          )}
                        </div>
                        <div className="text-right">
                          <span className="font-mono text-xs font-bold tabular-nums">
@@ -1432,37 +1695,26 @@ export default function ScorerPage() {
                       Wide <span className="ml-1 opacity-60 text-[8px] sm:text-xs">(2)</span>
                     </Button>
 
-                    {isSuperBall && canScore ? (
-                      <div className="flex flex-row sm:flex-col gap-1">
-                        <Button 
-                          disabled={!canScore} 
-                          onClick={() => handleExtra("NO BALL")} 
-                          variant="outline" 
-                          className="h-12 sm:h-8 flex-1 sm:flex-none border-neon-yellow/40 text-neon-yellow hover:bg-neon-yellow/10 font-black uppercase tracking-tighter text-[9px] rounded-xl sm:rounded-lg active:scale-95"
-                        >
-                          NB (2 only)
-                        </Button>
-                        <Select onValueChange={(v) => handleNoBallWithRuns(Number(v), true)}>
-                           <SelectTrigger className="h-12 sm:h-8 flex-1 sm:flex-none bg-yellow-400/10 border-yellow-400/30 text-yellow-400 text-[9px] font-black uppercase rounded-xl sm:rounded-lg">
-                              <SelectValue placeholder="NB + RUNS" />
-                           </SelectTrigger>
-                           <SelectContent>
-                              {[1, 2, 3, 4, 6].map(r => (
-                                <SelectItem key={r} value={r.toString()}>NB + {r} ({2 + r})</SelectItem>
-                              ))}
-                           </SelectContent>
-                        </Select>
-                      </div>
-                    ) : (
+                    <div className="flex flex-row sm:flex-col gap-1">
                       <Button 
                         disabled={!canScore} 
                         onClick={() => handleExtra("NO BALL")} 
                         variant="outline" 
-                        className="h-12 sm:h-14 border-neon-yellow/40 text-neon-yellow hover:bg-neon-yellow/10 text-[10px] sm:text-sm font-black uppercase tracking-wider rounded-xl active:scale-95 disabled:opacity-30"
+                        className={`h-12 sm:h-8 flex-1 sm:flex-none border-neon-yellow/40 text-neon-yellow hover:bg-neon-yellow/10 font-black uppercase tracking-tighter text-[9px] rounded-xl sm:rounded-lg active:scale-95 ${!isSuperBall ? 'sm:h-14 sm:text-xs' : ''}`}
                       >
-                        No Ball <span className="ml-1 opacity-60 text-[8px] sm:text-xs">(2)</span>
+                        NB (2 only)
                       </Button>
-                    )}
+                      <Select onValueChange={(v) => handleNoBallWithRuns(Number(v), isSuperBall)}>
+                         <SelectTrigger className="h-12 sm:h-8 flex-1 sm:flex-none bg-yellow-400/10 border-yellow-400/30 text-yellow-400 text-[9px] font-black uppercase rounded-xl sm:rounded-lg">
+                            <SelectValue placeholder="NB + RUNS" />
+                         </SelectTrigger>
+                         <SelectContent>
+                            {[1, 2, 3, 4, 6].map(r => (
+                              <SelectItem key={r} value={r.toString()}>NB + {r} ({2 + r})</SelectItem>
+                            ))}
+                         </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1536,15 +1788,6 @@ export default function ScorerPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
-                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/50">
-                  <Button onClick={swapBatsmenManual} variant="outline" size="sm" className="text-[10px] font-bold uppercase h-9 gap-1.5">
-                    <ArrowRightLeft className="h-3 w-3" /> Swap Bat
-                  </Button>
-                  <Button onClick={saveTeamsAndPlayers} variant="outline" size="sm" className="text-[10px] font-bold uppercase h-9 gap-1.5 border-primary/20 text-primary">
-                    Update All
-                  </Button>
-                </div>
               </div>
             </div>
 
@@ -1598,32 +1841,64 @@ export default function ScorerPage() {
       </main>
 
       {/* Super Ball Popup */}
-      {showSuperBallPopup && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <motion.div
-            initial={{ scale: 0.7, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="relative bg-gradient-to-br from-yellow-500/20 to-amber-600/10 border-2 border-yellow-400/60 rounded-2xl p-8 text-center max-w-sm mx-4 shadow-[0_0_60px_10px_rgba(234,179,8,0.25)]"
-          >
-            <div className="text-6xl mb-3 animate-bounce">⚡</div>
-            <h2 className="font-display text-3xl font-black text-yellow-400 mb-2">SUPER BALL!</h2>
-            <p className="text-muted-foreground text-sm mb-1">This is the <strong className="text-yellow-300">last ball of the over</strong>.</p>
-            <ul className="text-xs text-left text-muted-foreground space-y-1 mb-5 mt-3 bg-black/30 rounded-lg p-3">
-              <li>⚡ <span className="text-yellow-300 font-semibold">Runs</span> — doubled on super ball or free hit (0→0, 1→2, 2→4, 3→6, 4→8, 6→12)</li>
-              <li>🟠 <span className="text-orange-300 font-semibold">Wide / No Ball (plain)</span> — 2 runs only</li>
-              <li>🟡 <span className="text-yellow-200 font-semibold">No Ball + Runs</span> — NOT doubled, just NB+runs</li>
-              <li>🟢 <span className="text-green-300 font-semibold">Free Hit</span> — the next legal ball after a no-ball</li>
-              <li>💀 <span className="text-red-400 font-semibold">Wicket</span> — counts as 2 wickets!</li>
-            </ul>
-            <Button
-              onClick={() => setShowSuperBallPopup(false)}
-              className="w-full bg-yellow-400 text-black font-black hover:bg-yellow-300 text-lg py-5"
+      <Dialog open={showSuperBallPopup} onOpenChange={setShowSuperBallPopup}>
+        <DialogContent className="bg-yellow-400 border-none shadow-[0_0_100px_rgba(234,179,8,0.5)] max-w-sm overflow-hidden">
+          <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-white/20 rounded-full blur-2xl" />
+          <div className="relative py-8 text-center space-y-6">
+            <div className="w-20 h-20 bg-black rounded-full flex items-center justify-center mx-auto shadow-2xl">
+               <Zap className="h-10 w-10 text-yellow-400 fill-yellow-400" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-3xl font-display font-black text-black uppercase tracking-tighter italic">Super Ball!</h2>
+              <p className="text-black/80 font-bold text-sm uppercase tracking-widest">Runs & Wickets are DOUBLED</p>
+            </div>
+            <Button 
+              onClick={() => setShowSuperBallPopup(false)} 
+              className="w-full bg-black text-yellow-400 hover:bg-black/90 font-black uppercase py-6 text-lg rounded-xl"
             >
-              Got it — Bowl!
+              Let's Go!
             </Button>
-          </motion.div>
-        </div>
-      )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rename Player Dialog */}
+      <Dialog open={isRenameModalOpen} onOpenChange={setIsRenameModalOpen}>
+        <DialogContent className="bg-card border-border shadow-2xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit2 className="h-5 w-5 text-primary" />
+              Rename Player
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground uppercase font-bold">Old Name</Label>
+              <div className="p-3 bg-muted/50 rounded-lg text-sm font-medium border border-border/50 italic opacity-70">
+                {playerToRename}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground uppercase font-bold">New Name</Label>
+              <Input 
+                value={newPlayerName} 
+                onChange={(e) => setNewPlayerName(e.target.value)}
+                placeholder="Enter new name..."
+                className="bg-muted/30 border-border h-11"
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" onClick={() => setIsRenameModalOpen(false)} className="flex-1">
+              Cancel
+            </Button>
+            <Button onClick={handleRenamePlayer} className="flex-1 bg-primary hover:bg-primary/90">
+              Update Name
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Modals */}
       <Dialog open={isBowlerModalOpen} onOpenChange={setIsBowlerModalOpen}>
@@ -1685,6 +1960,11 @@ export default function ScorerPage() {
       <MatchSummaryModal 
         isOpen={isSummaryModalOpen} 
         onClose={() => setIsSummaryModalOpen(false)} 
+        onRenamePlayer={(name) => {
+          setPlayerToRename(name);
+          setNewPlayerName(name);
+          setIsRenameModalOpen(true);
+        }}
         data={{
           battingTeam,
           bowlingTeam,

@@ -2,6 +2,13 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { requireAdminSession } from "./adminAuth";
 
+export const getById = query({
+  args: { id: v.id("registrations") },
+  handler: async (ctx, args) => {
+    return await ctx.db.get(args.id);
+  },
+});
+
 export const generateUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
@@ -53,8 +60,12 @@ export const listRegistrations = query({
     return await Promise.all(
       registrations.map(async (reg) => {
         let paymentScreenshotUrl = null;
-        if (reg.paymentScreenshotId) {
-          paymentScreenshotUrl = await ctx.storage.getUrl(reg.paymentScreenshotId);
+        try {
+          if (reg.paymentScreenshotId) {
+            paymentScreenshotUrl = await ctx.storage.getUrl(reg.paymentScreenshotId);
+          }
+        } catch (e) {
+          console.error("Error getting storage URL", e);
         }
         return {
           ...reg,
@@ -137,5 +148,98 @@ export const deleteRegistration = mutation({
     }
     
     await ctx.db.delete(args.id);
+  },
+});
+
+export const renamePlayer = mutation({
+  args: {
+    token: v.string(),
+    registrationId: v.id("registrations"),
+    oldName: v.string(),
+    newName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await requireAdminSession(ctx, args.token);
+
+    const cleanOld = args.oldName.trim().toLowerCase();
+    const cleanNew = args.newName.trim();
+
+    const team = await ctx.db.get(args.registrationId);
+    if (!team) throw new Error("Team not found");
+
+    let updated = false;
+    let newPlayers = [...team.players];
+
+    // Check captain name
+    let newCaptainName = team.captainName;
+    if (team.captainName.trim().toLowerCase() === cleanOld) {
+      newCaptainName = cleanNew;
+      updated = true;
+    }
+
+    // Check players array
+    newPlayers = newPlayers.map(p => {
+      if (p.name.trim().toLowerCase() === cleanOld) {
+        updated = true;
+        return { ...p, name: cleanNew };
+      }
+      return p;
+    });
+
+    if (updated) {
+      await ctx.db.patch(team._id, {
+        captainName: newCaptainName,
+        players: newPlayers as any
+      });
+    }
+
+    return { success: updated };
+  },
+});
+
+export const renamePlayerGlobally = mutation({
+  args: {
+    token: v.string(),
+    oldName: v.string(),
+    newName: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await requireAdminSession(ctx, args.token);
+
+    const allTeams = await ctx.db.query("registrations").collect();
+    let totalUpdated = 0;
+    const cleanOld = args.oldName.trim().toLowerCase();
+    const cleanNew = args.newName.trim();
+
+    for (const team of allTeams) {
+      let updated = false;
+      let newPlayers = [...team.players];
+
+      // Check captain name
+      let newCaptainName = team.captainName;
+      if (team.captainName.trim().toLowerCase() === cleanOld) {
+        newCaptainName = cleanNew;
+        updated = true;
+      }
+
+      // Check players array
+      newPlayers = newPlayers.map(p => {
+        if (p.name.trim().toLowerCase() === cleanOld) {
+          updated = true;
+          return { ...p, name: cleanNew };
+        }
+        return p;
+      });
+
+      if (updated) {
+        await ctx.db.patch(team._id, {
+          captainName: newCaptainName,
+          players: newPlayers as any
+        });
+        totalUpdated++;
+      }
+    }
+
+    return { success: totalUpdated > 0, count: totalUpdated };
   },
 });

@@ -13,10 +13,16 @@ const fadeUp = {
 };
 
 export default function HomePage() {
-  const liveMatches = matches.filter((m) => m.status === "live");
-  const recentMatches = matches.filter((m) => m.status === "completed").slice(0, 4);
+  const allMatches = useQuery(api.matches.list) ?? [];
+  const liveMatches = allMatches.filter((m) => m.status === "live");
+  const recentMatches = allMatches.filter((m) => m.status === "completed").slice(0, 4);
+  const upcomingMatches = allMatches.filter((m) => m.status === "scheduled").slice(0, 4);
+  
   const liveScore = useQuery(api.liveScore.getCurrent);
   const registrationStats = useQuery(api.registrations.registrationStats);
+  const leaderboard = useQuery(api.matches.getSeriesLeaderboard) ?? [];
+  const topPerformers = leaderboard.slice(0, 3);
+
   const heroImage = {
     src: "https://images.unsplash.com/photo-1593341646782-e0b495cff86d?auto=format&fit=crop&w=2000&q=80",
     alt: "Cricket ball on green grass",
@@ -44,15 +50,17 @@ export default function HomePage() {
             <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm text-primary mb-6">
               <Zap className="h-4 w-4" />
               {liveScore
-                ? `${liveScore.battingTeam} ${liveScore.runs}/${liveScore.wickets} (${liveScore.overs}.${liveScore.balls})`
-                : "Season 2026 — Live Now"}
+                ? (liveScore.inning === 2 && liveScore.firstInningScore
+                    ? `${liveScore.bowlingTeam} ${liveScore.firstInningScore.runs}/${liveScore.firstInningScore.wickets} | ${liveScore.battingTeam} ${liveScore.runs}/${liveScore.wickets}`
+                    : `${liveScore.battingTeam} ${liveScore.runs}/${liveScore.wickets} (${liveScore.overs}.${liveScore.balls})`)
+                : "VAGAD RAGHUVANSHI PARIVAR 2026"}
             </div>
             <h1 className="font-display text-5xl md:text-7xl font-bold leading-tight text-foreground">
               VAGAD RAGHUVANSHI PARIVAR - BHUJ <br />
               <span className="text-primary neon-text-green">BOX CRICKET</span>
             </h1>
             <p className="mt-6 text-lg text-muted-foreground max-w-lg">
-              Experience thrilling box cricket action. Register your team, follow live scores, and compete for glory!
+              Experience thrilling box cricket action. Follow live scores, and compete for glory!
             </p>
             <div className="flex flex-wrap gap-4 mt-8">
               <Link to="/register">
@@ -89,7 +97,7 @@ export default function HomePage() {
             </div>
             <div className="grid gap-6 md:grid-cols-2">
               {liveMatches.map((m, i) => (
-                <motion.div key={m.id} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+                <motion.div key={m._id} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
                   <MatchCard match={m} />
                 </motion.div>
               ))}
@@ -101,10 +109,15 @@ export default function HomePage() {
       {/* Recent Matches */}
       <section className="py-16 bg-card/30">
         <div className="container mx-auto px-4">
-          <h2 className="font-display text-3xl font-bold text-foreground mb-8">Recent Matches</h2>
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="font-display text-3xl font-bold text-foreground">Recent Matches</h2>
+            <Link to="/matches?tab=completed" className="text-sm font-bold text-primary flex items-center gap-1">
+               View All <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
           <div className="grid gap-6 md:grid-cols-2">
             {recentMatches.map((m, i) => (
-              <motion.div key={m.id} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+              <motion.div key={m._id} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
                 <MatchCard match={m} />
               </motion.div>
             ))}
@@ -112,61 +125,65 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Top Players */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <h2 className="font-display text-3xl font-bold text-foreground mb-8 flex items-center gap-2">
-            <Trophy className="h-7 w-7 text-neon-yellow" /> Top Performers
-          </h2>
-          <div className="grid gap-8 md:grid-cols-2">
-            {/* Top Batsmen */}
-            <div className="rounded-xl border border-border bg-card p-6">
-              <h3 className="font-display text-xl font-bold text-neon-yellow mb-4">🏏 Most Runs</h3>
-              <div className="space-y-3">
-                {topBatsmen.slice(0, 3).map((b, i) => (
-                  <div key={b.name} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center gap-3">
-                      <span className="font-display text-2xl font-bold text-muted-foreground">#{i + 1}</span>
-                      <div>
-                        <p className="font-semibold text-foreground">{b.name}</p>
-                        <p className="text-xs text-muted-foreground">{b.team}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-display text-2xl font-bold text-neon-yellow">{b.runs}</p>
-                      <p className="text-xs text-muted-foreground">SR: {b.sr}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+      {/* Upcoming Matches */}
+      {upcomingMatches.length > 0 && (
+        <section className="py-16">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="font-display text-3xl font-bold text-foreground">Upcoming Matches</h2>
+              <Link to="/matches?tab=scheduled" className="text-sm font-bold text-primary flex items-center gap-1">
+                 Full Schedule <ChevronRight className="h-4 w-4" />
+              </Link>
             </div>
-
-            {/* Top Bowlers */}
-            <div className="rounded-xl border border-border bg-card p-6">
-              <h3 className="font-display text-xl font-bold text-neon-orange mb-4">🎯 Most Wickets</h3>
-              <div className="space-y-3">
-                {topBowlers.slice(0, 3).map((b, i) => (
-                  <div key={b.name} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                    <div className="flex items-center gap-3">
-                      <span className="font-display text-2xl font-bold text-muted-foreground">#{i + 1}</span>
-                      <div>
-                        <p className="font-semibold text-foreground">{b.name}</p>
-                        <p className="text-xs text-muted-foreground">{b.team}</p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-display text-2xl font-bold text-neon-orange">{b.wickets}</p>
-                      <p className="text-xs text-muted-foreground">Eco: {b.economy}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+              {upcomingMatches.map((m, i) => (
+                <motion.div key={m._id} custom={i} initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
+                  <MatchCard match={m} />
+                </motion.div>
+              ))}
             </div>
           </div>
-          <div className="text-center mt-8">
+        </section>
+      )}
+
+      {/* Top Players */}
+      <section className="py-16 bg-primary/5">
+        <div className="container mx-auto px-4">
+          <h2 className="font-display text-3xl font-bold text-foreground mb-8 flex items-center gap-2">
+            <Trophy className="h-7 w-7 text-neon-yellow" /> Tournament Leaders
+          </h2>
+          <div className="grid gap-8 md:grid-cols-3">
+             {topPerformers.length > 0 ? topPerformers.map((p, i) => (
+               <div key={p.playerName} className="relative rounded-2xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+                 <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+                 <div className="flex items-center gap-4 mb-4">
+                   <span className="font-display text-4xl font-black text-primary/20">#{i + 1}</span>
+                   <div>
+                     <p className="font-display text-xl font-bold text-foreground uppercase tracking-tight">{p.playerName}</p>
+                     <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{p.teamName}</p>
+                   </div>
+                 </div>
+                 <div className="flex justify-between items-end border-t border-border pt-4 mt-4">
+                   <div>
+                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Total Points</p>
+                     <p className="font-display text-4xl font-black text-primary tabular-nums">{p.total}</p>
+                   </div>
+                   <div className="text-right">
+                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Matches</p>
+                     <p className="font-display text-xl font-bold text-foreground">{p.matches}</p>
+                   </div>
+                 </div>
+               </div>
+             )) : (
+               <div className="col-span-full py-12 text-center text-muted-foreground italic border border-dashed border-border rounded-2xl">
+                 Leaderboard will be available once matches are completed.
+               </div>
+             )}
+          </div>
+          <div className="text-center mt-12">
             <Link to="/leaderboard">
-              <Button variant="outline" className="border-primary/30 text-primary hover:bg-primary/10">
-                View Full Leaderboard <ChevronRight className="ml-1 h-4 w-4" />
+              <Button variant="outline" className="h-12 px-8 border-primary/30 text-primary hover:bg-primary/10 rounded-xl font-bold uppercase tracking-widest">
+                View All Rankings <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
             </Link>
           </div>
@@ -179,7 +196,7 @@ export default function HomePage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
               { label: "Teams", value: `${registrationStats?.total ?? 0}`, icon: Users, color: "text-primary" },
-              { label: "Matches", value: "4", icon: Trophy, color: "text-neon-yellow" },
+              { label: "Matches", value: `${allMatches.length}`, icon: Trophy, color: "text-neon-yellow" },
               { label: "Live Runs", value: `${liveScore?.runs ?? 0}`, icon: Zap, color: "text-neon-orange" },
               { label: "Live Wkts", value: `${liveScore?.wickets ?? 0}`, icon: Trophy, color: "text-destructive" },
             ].map((s) => (

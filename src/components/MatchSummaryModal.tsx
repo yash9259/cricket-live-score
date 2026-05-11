@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
-import { Trophy, Users } from "lucide-react";
+import { Trophy, Users, Edit2 } from "lucide-react";
 
 interface BatsmanStat {
   name: string;
@@ -21,6 +21,7 @@ interface BowlerStat {
 interface MatchSummaryModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onRenamePlayer?: (name: string) => void;
   data: {
     battingTeam: string;
     bowlingTeam: string;
@@ -38,7 +39,7 @@ interface MatchSummaryModalProps {
   };
 }
 
-export function MatchSummaryModal({ isOpen, onClose, data }: MatchSummaryModalProps) {
+export function MatchSummaryModal({ isOpen, onClose, data, onRenamePlayer }: MatchSummaryModalProps) {
   const formatOvers = (totalBalls: number) => {
     const ov = Math.floor(totalBalls / 6);
     const bl = totalBalls % 6;
@@ -108,8 +109,17 @@ export function MatchSummaryModal({ isOpen, onClose, data }: MatchSummaryModalPr
           <div className="space-y-1">
             {batsmen && batsmen.length > 0 ? batsmen.map((b, i) => (
               <div key={i} className="flex justify-between text-sm items-center py-1 border-b border-border/30 last:border-0">
-                <span className={`font-medium ${b.isOut ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
+                <span className={`font-medium flex items-center gap-2 ${b.isOut ? 'text-muted-foreground line-through' : 'text-foreground'}`}>
                     {b.name}
+                    {onRenamePlayer && (
+                      <button 
+                        onClick={() => onRenamePlayer(b.name)}
+                        className="p-1 hover:bg-primary/20 rounded transition-colors no-underline"
+                        title="Rename Player"
+                      >
+                        <Edit2 className="h-3 w-3 text-primary" />
+                      </button>
+                    )}
                 </span>
                 <div className="flex gap-4 font-mono">
                   <span className="w-8 text-right font-bold">{b.runs}</span>
@@ -134,7 +144,18 @@ export function MatchSummaryModal({ isOpen, onClose, data }: MatchSummaryModalPr
           <div className="space-y-1">
             {bowlers && bowlers.length > 0 ? bowlers.map((b, i) => (
               <div key={i} className="flex justify-between text-sm items-center py-1 border-b border-border/30 last:border-0">
-                <span className="font-medium">{b.name}</span>
+                <span className="font-medium flex items-center gap-2">
+                  {b.name}
+                  {onRenamePlayer && (
+                    <button 
+                      onClick={() => onRenamePlayer(b.name)}
+                      className="p-1 hover:bg-primary/20 rounded transition-colors"
+                      title="Rename Player"
+                    >
+                      <Edit2 className="h-3 w-3 text-primary" />
+                    </button>
+                  )}
+                </span>
                 <div className="flex gap-4 font-mono">
                   <span className="w-12 text-right font-bold text-neon-orange">{b.wickets}-{b.runs}</span>
                   <span className="w-8 text-right text-muted-foreground">{formatOvers(b.balls)}</span>

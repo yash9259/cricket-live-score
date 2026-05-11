@@ -81,6 +81,7 @@ export default function AdminPage() {
   const deleteMatch = useMutation(api.matches.deleteMatch);
   const deleteAllScheduled = useMutation(api.matches.deleteAllScheduled);
   const startMatch = useMutation(api.matches.startMatch);
+  const updateMatchStatus = useMutation(api.matches.updateStatus);
   const importMatches = useMutation(api.matches.createMany);
 
   const updateRegistration = useMutation(api.registrations.updateRegistration);
@@ -100,6 +101,12 @@ export default function AdminPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [teamASearch, setTeamASearch] = useState("");
   const [teamBSearch, setTeamBSearch] = useState("");
+  const [matchStatusFilter, setMatchStatusFilter] = useState<"all" | "scheduled" | "live" | "completed">("all");
+
+  const filteredMatches = useMemo(() => {
+    if (matchStatusFilter === "all") return matches;
+    return matches.filter(m => m.status === matchStatusFilter);
+  }, [matches, matchStatusFilter]);
 
   // Registration Tab Logic
   const nameCountMap = useMemo(() => {
@@ -901,8 +908,23 @@ export default function AdminPage() {
                 {/* Scheduled Matches List */}
                 <div className="lg:col-span-2 space-y-4">
                   <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                    <div className="p-4 border-b border-border bg-muted/20">
-                      <h4 className="font-bold">Scheduled Matches</h4>
+                    <div className="p-4 border-b border-border bg-muted/20 flex items-center justify-between">
+                      <h4 className="font-bold">Match List</h4>
+                      <div className="flex gap-1 p-1 bg-muted rounded-lg">
+                        {(["all", "scheduled", "live", "completed"] as const).map((s) => (
+                          <button
+                            key={s}
+                            onClick={() => setMatchStatusFilter(s)}
+                            className={`px-3 py-1 text-[10px] font-bold uppercase rounded-md transition-all ${
+                              matchStatusFilter === s 
+                                ? "bg-primary text-white shadow-sm" 
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
@@ -915,7 +937,7 @@ export default function AdminPage() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-border/50">
-                          {matches.map((match) => (
+                          {filteredMatches.map((match) => (
                             <Fragment key={match._id}>
                               <tr className="hover:bg-muted/10 transition-colors">
                               <td className="p-4 font-medium">
@@ -940,7 +962,7 @@ export default function AdminPage() {
                                 </div>
                               </td>
                               <td className="p-4">
-                                <span className="px-2 py-0.5 rounded bg-muted text-xs border border-border flex flex-col items-center">
+                                <span className="px-2 py-0.5 rounded bg-muted text-xs border border-border flex flex-col items-center text-center min-w-[100px]">
                                   <span>{match.categoryLabel}</span>
                                   {(match.date || match.time) && (
                                     <span className="text-[9px] text-primary/70 mt-1">
@@ -950,10 +972,41 @@ export default function AdminPage() {
                                 </span>
                               </td>
                               <td className="p-4">
-                                <span className={`text-xs font-bold px-2 py-1 rounded-full uppercase ${match.status === "live" ? "bg-emerald-500/10 text-emerald-500" : "bg-primary/10 text-primary"
+                                <Select
+                                  value={match.status}
+                                  onValueChange={async (newStatus: any) => {
+                                    try {
+                                      await updateMatchStatus({
+                                        token: sessionToken,
+                                        matchId: match._id,
+                                        status: newStatus
+                                      });
+                                      toast({
+                                        title: "Status Updated",
+                                        description: `Match status changed to ${newStatus}`,
+                                      });
+                                    } catch (err: any) {
+                                      toast({
+                                        title: "Error",
+                                        description: err.message || "Failed to update status",
+                                        variant: "destructive",
+                                      });
+                                    }
+                                  }}
+                                >
+                                  <SelectTrigger className={`h-7 w-28 text-[10px] font-black uppercase tracking-wider border-none focus:ring-0 ${
+                                    match.status === "live" ? "bg-emerald-500/10 text-emerald-500" : 
+                                    match.status === "completed" ? "bg-muted text-muted-foreground" :
+                                    "bg-primary/10 text-primary"
                                   }`}>
-                                  {match.status}
-                                </span>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="scheduled">Scheduled</SelectItem>
+                                    <SelectItem value="live">Live</SelectItem>
+                                    <SelectItem value="completed">Completed</SelectItem>
+                                  </SelectContent>
+                                </Select>
                               </td>
                               <td className="p-4 text-right space-x-2">
                                 <Button
@@ -966,22 +1019,43 @@ export default function AdminPage() {
                                 </Button>
 
                                 {match.status === "scheduled" && (
-                                  <>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="h-8 border-primary text-primary hover:bg-primary/10"
-                                      onClick={() => startMatch({ token: sessionToken, matchId: match._id })}
-                                    >
-                                      Start Live
-                                    </Button>
-                                    <button
-                                      onClick={() => deleteMatch({ token: sessionToken, id: match._id })}
-                                      className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </button>
-                                  </>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="h-8 border-primary text-primary hover:bg-primary/10"
+                                    onClick={() => startMatch({ token: sessionToken, matchId: match._id })}
+                                  >
+                                    Start Live
+                                  </Button>
+                                )}
+
+                                <button
+                                  onClick={async () => {
+                                    if (confirm("Are you sure you want to delete this match? This will also remove any associated live scores.")) {
+                                      try {
+                                        await deleteMatch({ token: sessionToken, id: match._id });
+                                        toast({
+                                          title: "Match Deleted",
+                                          description: "The match record has been removed.",
+                                        });
+                                      } catch (err: any) {
+                                        toast({
+                                          title: "Error",
+                                          description: err.message || "Failed to delete match",
+                                          variant: "destructive",
+                                        });
+                                      }
+                                    }
+                                  }}
+                                  className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+
+                                {match.status === "completed" && (
+                                   <span className="text-[10px] font-bold text-primary px-2 py-1 bg-primary/5 rounded border border-primary/10">
+                                     {match.winnerName ? `WINNER: ${match.winnerName}` : "MATCH TIED"}
+                                   </span>
                                 )}
                               </td>
                             </tr>
@@ -996,9 +1070,16 @@ export default function AdminPage() {
                                       className="overflow-hidden bg-muted/5 border-b border-border/50"
                                     >
                                       <div className="p-6">
-                                        <div className="flex items-center gap-2 mb-4">
-                                          <BarChart3 className="h-4 w-4 text-primary" />
-                                          <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Detailed Scoreboard</h4>
+                                        <div className="flex items-center justify-between mb-4">
+                                          <div className="flex items-center gap-2">
+                                            <BarChart3 className="h-4 w-4 text-primary" />
+                                            <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Detailed Scoreboard</h4>
+                                          </div>
+                                          {match.status === "completed" && match.finalScoreA && match.finalScoreB && (
+                                            <div className="text-xs font-bold px-3 py-1 bg-card border border-border rounded-lg">
+                                              Final Score: {match.teamAName} {match.finalScoreA.runs}/{match.finalScoreA.wickets} vs {match.teamBName} {match.finalScoreB.runs}/{match.finalScoreB.wickets}
+                                            </div>
+                                          )}
                                         </div>
                                         <ScoreboardTable matchId={match._id} />
                                       </div>
@@ -1009,25 +1090,25 @@ export default function AdminPage() {
                             </AnimatePresence>
                           </Fragment>
                         ))}
-                        {matches.length === 0 && (
+                        {filteredMatches.length === 0 && (
                           <tr>
                             <td colSpan={4} className="p-8 text-center text-muted-foreground italic">
-                              No matches scheduled. Use the auto-generator or create one manually.
+                              No {matchStatusFilter !== "all" ? matchStatusFilter : ""} matches found.
                             </td>
                           </tr>
                         )}
                       </tbody>
                     </table>
+                    </div>
                   </div>
                 </div>
-              </div>
               </div>
             </motion.div>
           )}
 
           {tab === "registrations" && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 max-w-7xl mx-auto">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4 max-w-7xl mx-auto">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
                   <div>
                     <h3 className="font-display font-bold text-2xl">Registered Teams</h3>
                     <p className="text-sm text-muted-foreground">Manage and export team registrations.</p>

@@ -88,20 +88,7 @@ export default function MatchesPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
             >
-               {/* Note: MatchCard might need update to handle Convex Match objects, 
-                   but for now it's using the same general structure or I can adapt it */}
-               <MatchCard match={{
-                 id: m._id,
-                 status: m.status as any,
-                 teamA: { name: m.teamAName } as any,
-                 teamB: { name: m.teamBName } as any,
-                 venue: "Lohana Sports Club", // Hardcoded as per current setup
-                 date: new Date(m.createdAt).toLocaleDateString(),
-                 time: new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                 overs: 6,
-                 // We don't have the final score in the match object yet, 
-                 // but we could fetch it if we wanted. For now let's focus on the table view.
-               }} />
+               <MatchCard match={m} />
             </motion.div>
           ))}
         </div>
@@ -129,20 +116,42 @@ export default function MatchesPage() {
                                <div className="flex items-center gap-2">
                                  <div className="flex flex-col">
                                    <span className="font-display font-bold text-base">{match.teamAName}</span>
-                                   {match.finalScoreA && (
-                                     <span className="text-xs font-bold text-primary">
-                                       {match.finalScoreA.runs}/{match.finalScoreA.wickets} ({match.finalScoreA.overs}.{match.finalScoreA.balls})
-                                     </span>
-                                   )}
+                                   {(() => {
+                                     const score = match.status === "completed" 
+                                       ? match.finalScoreA 
+                                       : (match.status === "live" && match.liveScore)
+                                         ? (match.liveScore.battingTeam === match.teamAName 
+                                           ? { runs: match.liveScore.runs, wickets: match.liveScore.wickets, overs: match.liveScore.overs, balls: match.liveScore.balls }
+                                           : (match.liveScore.bowlingTeam === match.teamAName && match.liveScore.inning === 2)
+                                             ? match.liveScore.firstInningScore
+                                             : null)
+                                         : null;
+                                     return score ? (
+                                       <span className="text-xs font-bold text-primary">
+                                         {score.runs}/{score.wickets} ({score.overs}.{score.balls})
+                                       </span>
+                                     ) : null;
+                                   })()}
                                  </div>
                                  <span className="text-[10px] font-black text-muted-foreground/50">VS</span>
                                  <div className="flex flex-col">
                                    <span className="font-display font-bold text-base">{match.teamBName}</span>
-                                   {match.finalScoreB && (
-                                     <span className="text-xs font-bold text-orange-500">
-                                       {match.finalScoreB.runs}/{match.finalScoreB.wickets} ({match.finalScoreB.overs}.{match.finalScoreB.balls})
-                                     </span>
-                                   )}
+                                   {(() => {
+                                     const score = match.status === "completed" 
+                                       ? match.finalScoreB 
+                                       : (match.status === "live" && match.liveScore)
+                                         ? (match.liveScore.battingTeam === match.teamBName 
+                                           ? { runs: match.liveScore.runs, wickets: match.liveScore.wickets, overs: match.liveScore.overs, balls: match.liveScore.balls }
+                                           : (match.liveScore.bowlingTeam === match.teamBName && match.liveScore.inning === 2)
+                                             ? match.liveScore.firstInningScore
+                                             : null)
+                                         : null;
+                                     return score ? (
+                                       <span className="text-xs font-bold text-orange-500">
+                                         {score.runs}/{score.wickets} ({score.overs}.{score.balls})
+                                       </span>
+                                     ) : null;
+                                   })()}
                                  </div>
                                </div>
                                <div className="flex items-center gap-3 mt-1 text-[11px] text-muted-foreground">
@@ -158,16 +167,24 @@ export default function MatchesPage() {
                           </span>
                         </td>
                         <td className="p-5">
-                          <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border ${
-                            match.status === "live" 
-                              ? "bg-destructive/10 text-destructive border-destructive/20 animate-pulse" 
-                              : match.status === "completed"
-                                ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
-                                : "bg-muted text-muted-foreground border-border"
-                          }`}>
-                            {match.status === "live" && <span className="w-1 h-1 rounded-full bg-current" />}
-                            {match.status}
-                          </span>
+                          <div className="flex flex-col gap-1.5">
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border ${
+                              match.status === "live" 
+                                ? "bg-destructive/10 text-destructive border-destructive/20 animate-pulse" 
+                                : match.status === "completed"
+                                  ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                                  : "bg-muted text-muted-foreground border-border"
+                            }`}>
+                              {match.status === "live" && <span className="w-1 h-1 rounded-full bg-current" />}
+                              {match.status === "completed" && match.winnerName ? `${match.winnerName} WON` : match.status}
+                            </span>
+                            {match.status === "completed" && match.manOfTheMatch && (
+                              <span className="inline-flex items-center gap-1 text-[8px] font-bold text-yellow-600 uppercase tracking-widest px-2">
+                                <Zap className="h-2.5 w-2.5 fill-yellow-600" />
+                                MOM: {match.manOfTheMatch}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="p-5 text-right">
                           <Button

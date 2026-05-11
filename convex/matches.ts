@@ -10,6 +10,17 @@ export const list = query({
       matches.map(async (match) => {
         const teamA = await ctx.db.get(match.teamAId);
         const teamB = await ctx.db.get(match.teamBId);
+        const winner = match.winnerId ? await ctx.db.get(match.winnerId) : null;
+        
+        // Fetch live score if status is live
+        let liveScore = null;
+        if (match.status === "live") {
+           liveScore = await ctx.db
+            .query("liveScores")
+            .withIndex("by_matchId", (q) => q.eq("matchId", match._id))
+            .unique();
+        }
+
         return {
           ...match,
           teamAName: teamA?.teamName ?? "Unknown",
@@ -18,6 +29,19 @@ export const list = query({
           captainBName: teamB?.captainName ?? "Unknown",
           phoneA: teamA?.phone ?? "",
           phoneB: teamB?.phone ?? "",
+          winnerName: winner?.teamName ?? null,
+          tossWinner: match.tossWinner || null,
+          tossDecision: match.tossDecision || null,
+          liveScore: liveScore ? {
+            runs: liveScore.runs,
+            wickets: liveScore.wickets,
+            overs: liveScore.overs,
+            balls: liveScore.balls,
+            battingTeam: liveScore.battingTeam,
+            bowlingTeam: liveScore.bowlingTeam,
+            inning: liveScore.inning,
+            firstInningScore: liveScore.firstInningScore,
+          } : null,
         };
       })
     );
@@ -118,6 +142,17 @@ export const deleteMatch = mutation({
   },
   handler: async (ctx, args) => {
     await requireAdminSession(ctx, args.token);
+    
+    // Cleanup associated live scores
+    const liveScores = await ctx.db
+      .query("liveScores")
+      .withIndex("by_matchId", (q) => q.eq("matchId", args.id))
+      .collect();
+    
+    for (const score of liveScores) {
+      await ctx.db.delete(score._id);
+    }
+
     await ctx.db.delete(args.id);
   },
 });
@@ -285,21 +320,41 @@ export const completeMatch = mutation({
       const winner = args.winnerId ? await ctx.db.get(args.winnerId) : null;
       const winnerName = winner?.teamName;
 
-      const playerStats: Record<string, { batting: number, bowling: number, total: number, teamId: any, teamName: string }> = {};
+      const playerStats: Record<string, { 
+        batting: number, bowling: number, total: number, teamId: any, teamName: string,
+        runs: number, wickets: number, fours: number, sixes: number, balls: number
+      }> = {};
 
       const initializePlayer = (name: string, teamId: any, teamName: string) => {
         const key = `${teamName}:${name}`;
         if (!playerStats[key]) {
-          playerStats[key] = { batting: 0, bowling: 0, total: 0, teamId, teamName };
+          playerStats[key] = { 
+            batting: 0, bowling: 0, total: 0, teamId, teamName,
+            runs: 0, wickets: 0, fours: 0, sixes: 0, balls: 0
+          };
         }
       };
 
-      const processPlayer = (name: string, batting: number, bowling: number, teamId: any, teamName: string) => {
+      const processPlayer = (
+        name: string, 
+        batting: number, 
+        bowling: number, 
+        teamId: any, 
+        teamName: string,
+        stats?: { runs?: number, wickets?: number, fours?: number, sixes?: number, balls?: number }
+      ) => {
         const key = `${teamName}:${name}`;
         initializePlayer(name, teamId, teamName);
         playerStats[key].batting += batting;
         playerStats[key].bowling += bowling;
         playerStats[key].total += (batting + bowling);
+        if (stats) {
+          playerStats[key].runs += stats.runs || 0;
+          playerStats[key].wickets += stats.wickets || 0;
+          playerStats[key].fours += stats.fours || 0;
+          playerStats[key].sixes += stats.sixes || 0;
+          playerStats[key].balls += stats.balls || 0;
+        }
       };
 
       // 1. Initialize all registered players with 0 points
@@ -307,10 +362,10 @@ export const completeMatch = mutation({
       teamBReg?.players.forEach(p => initializePlayer(p.name, match.teamBId, teamBReg.teamName));
 
       // 2. Process points from live score
-      liveScore.batsmenInning1?.forEach(p => processPlayer(p.name, p.points ?? 0, 0, match.teamAId, teamAReg?.teamName ?? ""));
-      liveScore.bowlersInning1?.forEach(p => processPlayer(p.name, 0, p.points ?? 0, match.teamBId, teamBReg?.teamName ?? ""));
-      liveScore.batsmenInning2?.forEach(p => processPlayer(p.name, p.points ?? 0, 0, match.teamBId, teamBReg?.teamName ?? ""));
-      liveScore.bowlersInning2?.forEach(p => processPlayer(p.name, 0, p.points ?? 0, match.teamAId, teamAReg?.teamName ?? ""));
+      liveScore.batsmenInning1?.forEach(p => processPlayer(p.name, p.points ?? 0, 0, match.teamAId, teamAReg?.teamName ?? "", { runs: p.runs, fours: p.fours, sixes: p.sixes, balls: p.balls }));
+      liveScore.bowlersInning1?.forEach(p => processPlayer(p.name, 0, p.points ?? 0, match.teamBId, teamBReg?.teamName ?? "", { wickets: p.wickets, balls: p.balls }));
+      liveScore.batsmenInning2?.forEach(p => processPlayer(p.name, p.points ?? 0, 0, match.teamBId, teamBReg?.teamName ?? "", { runs: p.runs, fours: p.fours, sixes: p.sixes, balls: p.balls }));
+      liveScore.bowlersInning2?.forEach(p => processPlayer(p.name, 0, p.points ?? 0, match.teamAId, teamAReg?.teamName ?? "", { wickets: p.wickets, balls: p.balls }));
 
       // 3. Find MoM
       let maxPoints = -Infinity;
@@ -340,6 +395,11 @@ export const completeMatch = mutation({
           battingPoints: stats.batting,
           bowlingPoints: stats.bowling,
           totalPoints: stats.total,
+          runs: stats.runs,
+          wickets: stats.wickets,
+          fours: stats.fours,
+          sixes: stats.sixes,
+          balls: stats.balls,
           categoryLabel: match.categoryLabel,
           isMoM: momName === pName,
         });
@@ -377,6 +437,69 @@ export const getSeriesLeaderboard = query({
     });
 
     return Object.values(leaderboard).sort((a, b) => b.total - a.total);
+  },
+});
+
+export const getTopPerformers = query({
+  args: {},
+  handler: async (ctx) => {
+    const stats = await ctx.db.query("playerMatchStats").collect();
+    
+    const aggregated: Record<string, { playerName: string, teamName: string, runs: number, wickets: number, fours: number, sixes: number, balls: number, sr: number, economy: number }> = {};
+
+    stats.forEach((s) => {
+      const key = `${s.teamName}:${s.playerName}`;
+      if (!aggregated[key]) {
+        aggregated[key] = { playerName: s.playerName, teamName: s.teamName, runs: 0, wickets: 0, fours: 0, sixes: 0, balls: 0, sr: 0, economy: 0 };
+      }
+      aggregated[key].runs += s.runs || 0;
+      aggregated[key].wickets += s.wickets || 0;
+      aggregated[key].fours += s.fours || 0;
+      aggregated[key].sixes += s.sixes || 0;
+      aggregated[key].balls += s.balls || 0;
+    });
+
+    const list = Object.values(aggregated);
+
+    // Calculate SR and Economy if needed (Economy needs overs)
+    list.forEach(p => {
+      if (p.balls > 0) {
+        p.sr = Number(((p.runs / p.balls) * 100).toFixed(2));
+      }
+    });
+
+    const topBatsmen = [...list].sort((a, b) => b.runs - a.runs).slice(0, 5);
+    const topBowlers = [...list].sort((a, b) => b.wickets - a.wickets).slice(0, 5);
+
+    return { topBatsmen, topBowlers };
+  },
+});
+
+export const updateToss = mutation({
+  args: {
+    token: v.string(),
+    matchId: v.id("matches"),
+    tossWinner: v.string(),
+    tossDecision: v.union(v.literal("bat"), v.literal("bowl")),
+  },
+  handler: async (ctx, args) => {
+    await requireAdminSession(ctx, args.token);
+    await ctx.db.patch(args.matchId, {
+      tossWinner: args.tossWinner,
+      tossDecision: args.tossDecision,
+    });
+  },
+});
+
+export const updateStatus = mutation({
+  args: {
+    token: v.string(),
+    matchId: v.id("matches"),
+    status: v.union(v.literal("scheduled"), v.literal("live"), v.literal("completed")),
+  },
+  handler: async (ctx, args) => {
+    await requireAdminSession(ctx, args.token);
+    await ctx.db.patch(args.matchId, { status: args.status });
   },
 });
 
