@@ -32,14 +32,15 @@ interface ScoreboardTableProps {
 
 export function ScoreboardTable({ matchId, data }: ScoreboardTableProps) {
   const [activeTab, setActiveTab] = useState<1 | 2>(1);
-  const fetchedData = useQuery(api.liveScore.getByMatchId, matchId ? { matchId } : "skip");
-  const match = useQuery(api.matches.getById, matchId ? { id: matchId as any } : "skip");
+  const live = useQuery(api.liveScore.getCurrent);
+  const matchSpecificLive = useQuery(api.liveScore.getByMatchId, matchId ? { matchId: matchId as any } : "skip");
+  const scoreData = data || matchSpecificLive || (matchId ? null : live);
+
+  const match = useQuery(api.matches.getById, matchId ? { id: matchId as any } : (scoreData?.matchId ? { id: scoreData.matchId } : "skip"));
   
   // Fetch team registrations to know the full squad
   const teamA = useQuery(api.registrations.getById, match?.teamAId ? { id: match.teamAId } : "skip");
   const teamB = useQuery(api.registrations.getById, match?.teamBId ? { id: match.teamBId } : "skip");
-
-  const scoreData = data || fetchedData;
 
   const formatOvers = (totalBalls: number) => {
     const ov = Math.floor(totalBalls / 6);
@@ -77,15 +78,18 @@ export function ScoreboardTable({ matchId, data }: ScoreboardTableProps) {
   const bowlers = activeTab === 1 ? scoreData.bowlersInning1 : scoreData.bowlersInning2;
 
   // Get full squad for "Did not bat" with safety guards
-  const battingTeamReg = activeTab === 1 
-    ? (scoreData.inning === 1 ? teamA : teamB)
-    : (scoreData.inning === 2 ? teamA : teamB);
+  const battingTeamReg = teamA?.teamName === displayedTeamName ? teamA : (teamB?.teamName === displayedTeamName ? teamB : null);
+
   
   const squad = (battingTeamReg && battingTeamReg.players) 
     ? [battingTeamReg.captainName, ...battingTeamReg.players.map((p: any) => p.name)] 
     : [];
-  const battedNames = batsmen?.map(b => b.name) || [];
-  const didNotBat = squad.filter(name => name && !battedNames.includes(name));
+  const battedNames = batsmen?.map(b => b.name.trim()) || [];
+  const didNotBat = squad.filter(name => {
+    const trimmedName = name?.trim();
+    return trimmedName && !battedNames.includes(trimmedName);
+  });
+
 
   return (
     <div className="space-y-6">
@@ -184,21 +188,27 @@ export function ScoreboardTable({ matchId, data }: ScoreboardTableProps) {
             </tbody>
             {/* Did Not Bat Footer */}
             {didNotBat.length > 0 && (
-              <tfoot className="bg-muted/10">
+              <tfoot className="border-t border-white/5 bg-white/[0.01]">
                 <tr>
-                  <td colSpan={6} className="px-6 py-3 border-t border-white/5">
-                    <div className="flex flex-wrap gap-2 items-center">
-                      <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mr-2">Did Not Bat:</span>
-                      {didNotBat.map((name, idx) => (
-                        <span key={idx} className="text-[11px] font-medium text-foreground/70 bg-white/5 px-2 py-0.5 rounded border border-white/5">
-                          {name}
-                        </span>
-                      ))}
+                  <td colSpan={6} className="px-6 py-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <div className="flex items-center shrink-0">
+                        <Activity className="h-3 w-3 text-primary/60 mr-2" />
+                        <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Did Not Bat</span>
+                      </div>
+                      <div className="flex flex-wrap gap-x-2 gap-y-1">
+                        {didNotBat.map((name, idx) => (
+                          <span key={idx} className="text-[11px] font-medium text-foreground/70">
+                            {name}{idx < didNotBat.length - 1 ? "," : ""}
+                          </span>
+                        ))}
+                      </div>
                     </div>
                   </td>
                 </tr>
               </tfoot>
             )}
+
           </table>
         </div>
 
