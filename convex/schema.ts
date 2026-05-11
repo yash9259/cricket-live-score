@@ -193,6 +193,7 @@ export default defineSchema({
     sixes: v.optional(v.number()),
     balls: v.optional(v.number()),
     categoryLabel: v.string(),
+    maidens: v.optional(v.number()),
     isMoM: v.optional(v.boolean()),
   }).index("by_matchId", ["matchId"])
     .index("by_player", ["teamId", "playerName"])

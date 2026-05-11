@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { requireAdminSession } from "./adminAuth";
+import { calculateBattingPoints, calculateBowlingPoints } from "./points";
 
 export const list = query({
   args: {},
@@ -322,7 +323,7 @@ export const completeMatch = mutation({
 
       const playerStats: Record<string, { 
         batting: number, bowling: number, total: number, teamId: any, teamName: string,
-        runs: number, wickets: number, fours: number, sixes: number, balls: number
+        runs: number, wickets: number, fours: number, sixes: number, balls: number, maidens: number
       }> = {};
 
       const initializePlayer = (name: string, teamId: any, teamName: string) => {
@@ -330,30 +331,38 @@ export const completeMatch = mutation({
         if (!playerStats[key]) {
           playerStats[key] = { 
             batting: 0, bowling: 0, total: 0, teamId, teamName,
-            runs: 0, wickets: 0, fours: 0, sixes: 0, balls: 0
+            runs: 0, wickets: 0, fours: 0, sixes: 0, balls: 0, maidens: 0
           };
         }
       };
 
       const processPlayer = (
         name: string, 
-        batting: number, 
-        bowling: number, 
         teamId: any, 
         teamName: string,
-        stats?: { runs?: number, wickets?: number, fours?: number, sixes?: number, balls?: number }
+        stats?: { runs?: number, wickets?: number, fours?: number, sixes?: number, balls?: number, maidens?: number }
       ) => {
         const key = `${teamName}:${name}`;
         initializePlayer(name, teamId, teamName);
-        playerStats[key].batting += batting;
-        playerStats[key].bowling += bowling;
-        playerStats[key].total += (batting + bowling);
         if (stats) {
           playerStats[key].runs += stats.runs || 0;
           playerStats[key].wickets += stats.wickets || 0;
           playerStats[key].fours += stats.fours || 0;
           playerStats[key].sixes += stats.sixes || 0;
           playerStats[key].balls += stats.balls || 0;
+          playerStats[key].maidens += stats.maidens || 0;
+
+          // Recalculate points based on new rules
+          playerStats[key].batting = calculateBattingPoints({
+            runs: playerStats[key].runs,
+            fours: playerStats[key].fours,
+            sixes: playerStats[key].sixes
+          });
+          playerStats[key].bowling = calculateBowlingPoints({
+            wickets: playerStats[key].wickets,
+            maidens: playerStats[key].maidens
+          });
+          playerStats[key].total = playerStats[key].batting + playerStats[key].bowling;
         }
       };
 
@@ -362,10 +371,10 @@ export const completeMatch = mutation({
       teamBReg?.players.forEach(p => initializePlayer(p.name, match.teamBId, teamBReg.teamName));
 
       // 2. Process points from live score
-      liveScore.batsmenInning1?.forEach(p => processPlayer(p.name, p.points ?? 0, 0, match.teamAId, teamAReg?.teamName ?? "", { runs: p.runs, fours: p.fours, sixes: p.sixes, balls: p.balls }));
-      liveScore.bowlersInning1?.forEach(p => processPlayer(p.name, 0, p.points ?? 0, match.teamBId, teamBReg?.teamName ?? "", { wickets: p.wickets, balls: p.balls }));
-      liveScore.batsmenInning2?.forEach(p => processPlayer(p.name, p.points ?? 0, 0, match.teamBId, teamBReg?.teamName ?? "", { runs: p.runs, fours: p.fours, sixes: p.sixes, balls: p.balls }));
-      liveScore.bowlersInning2?.forEach(p => processPlayer(p.name, 0, p.points ?? 0, match.teamAId, teamAReg?.teamName ?? "", { wickets: p.wickets, balls: p.balls }));
+      liveScore.batsmenInning1?.forEach(p => processPlayer(p.name, match.teamAId, teamAReg?.teamName ?? "", { runs: p.runs, fours: p.fours, sixes: p.sixes, balls: p.balls }));
+      liveScore.bowlersInning1?.forEach(p => processPlayer(p.name, match.teamBId, teamBReg?.teamName ?? "", { wickets: p.wickets, balls: p.balls, maidens: p.maidens }));
+      liveScore.batsmenInning2?.forEach(p => processPlayer(p.name, match.teamBId, teamBReg?.teamName ?? "", { runs: p.runs, fours: p.fours, sixes: p.sixes, balls: p.balls }));
+      liveScore.bowlersInning2?.forEach(p => processPlayer(p.name, match.teamAId, teamAReg?.teamName ?? "", { wickets: p.wickets, balls: p.balls, maidens: p.maidens }));
 
       // 3. Find MoM
       let maxPoints = -Infinity;
@@ -400,6 +409,7 @@ export const completeMatch = mutation({
           fours: stats.fours,
           sixes: stats.sixes,
           balls: stats.balls,
+          maidens: stats.maidens,
           categoryLabel: match.categoryLabel,
           isMoM: momName === pName,
         });

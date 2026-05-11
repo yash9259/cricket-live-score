@@ -7,6 +7,8 @@ interface BatsmanStat {
   runs: number;
   balls: number;
   isOut: boolean;
+  fours?: number;
+  sixes?: number;
   points?: number;
 }
 
@@ -15,6 +17,7 @@ interface BowlerStat {
   runs: number;
   wickets: number;
   balls: number;
+  maidens?: number;
   points?: number;
 }
 
@@ -124,7 +127,9 @@ export function MatchSummaryModal({ isOpen, onClose, data, onRenamePlayer }: Mat
                 <div className="flex gap-4 font-mono">
                   <span className="w-8 text-right font-bold">{b.runs}</span>
                   <span className="w-8 text-right text-muted-foreground">{b.balls}</span>
-                  <span className="w-8 text-right text-primary">{b.points || 0}</span>
+                  <span className="w-8 text-right text-primary">
+                    {b.runs + ((b.fours || 0) * 2) + ((b.sixes || 0) * 4)}
+                  </span>
                 </div>
               </div>
             )) : <p className="text-xs text-muted-foreground italic">No batting data yet</p>}
@@ -159,7 +164,9 @@ export function MatchSummaryModal({ isOpen, onClose, data, onRenamePlayer }: Mat
                 <div className="flex gap-4 font-mono">
                   <span className="w-12 text-right font-bold text-neon-orange">{b.wickets}-{b.runs}</span>
                   <span className="w-8 text-right text-muted-foreground">{formatOvers(b.balls)}</span>
-                  <span className="w-8 text-right text-primary">{b.points || 0}</span>
+                  <span className="w-8 text-right text-primary">
+                    {(b.wickets * 20) + ((b.maidens || 0) * 15)}
+                  </span>
                 </div>
               </div>
             )) : <p className="text-xs text-muted-foreground italic">No bowling data yet</p>}

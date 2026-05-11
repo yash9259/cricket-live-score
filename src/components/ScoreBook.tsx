@@ -185,7 +185,11 @@ export function ScoreBook({
                         <td className="px-4 py-3 text-center font-mono text-xs text-muted-foreground">{b.balls}</td>
                         <td className="px-4 py-3 text-center font-bold text-primary">{balls.filter(bl => bl.batsman === b.name && bl.event.includes("4")).length}</td>
                         <td className="px-4 py-3 text-center font-bold text-primary">{balls.filter(bl => bl.batsman === b.name && bl.event.includes("6")).length}</td>
-                        <td className="px-4 py-3 text-center font-black text-primary bg-primary/5">{b.points || 0}</td>
+                        <td className="px-4 py-3 text-center font-black text-primary bg-primary/5">
+                          {b.runs + 
+                           (balls.filter(bl => bl.batsman === b.name && bl.event.includes("4")).length * 2) + 
+                           (balls.filter(bl => bl.batsman === b.name && bl.event.includes("6")).length * 4)}
+                        </td>
                       </tr>
                     ))}
 
@@ -291,7 +295,9 @@ export function ScoreBook({
                           <td className="px-4 py-3 text-center font-mono text-xs">{bw.maidens || 0}</td>
                           <td className="px-4 py-3 text-center font-display font-bold">{bw.runs}</td>
                           <td className="px-4 py-3 text-center font-display font-black text-destructive">{bw.wickets}</td>
-                          <td className="px-4 py-3 text-center font-black text-primary bg-primary/5">{bw.points || 0}</td>
+                          <td className="px-4 py-3 text-center font-black text-primary bg-primary/5">
+                            {(bw.wickets * 20) + ((bw.maidens || 0) * 15)}
+                          </td>
                         </tr>
                       );
 

@@ -341,8 +341,8 @@ export default function ScorerPage() {
         
         const ballPoints = calculateBattingPoints({
           runs: params.runsScored || 0,
-          dots: params.isDot ? 1 : 0,
-          isOut: params.isOut || false,
+          fours: params.isFour ? 1 : 0,
+          sixes: params.isSix ? 1 : 0,
           isSuperBall: params.isSuperBall
         });
 
@@ -359,8 +359,8 @@ export default function ScorerPage() {
       } else {
         const ballPoints = calculateBattingPoints({
           runs: params.runsScored || 0,
-          dots: params.isDot ? 1 : 0,
-          isOut: params.isOut || false,
+          fours: params.isFour ? 1 : 0,
+          sixes: params.isSix ? 1 : 0,
           isSuperBall: params.isSuperBall
         });
         nextBatsmen.push({ 
@@ -382,8 +382,6 @@ export default function ScorerPage() {
         const bw = nextBowlers[idx];
         const ballPoints = calculateBowlingPoints({
           wickets: params.wicketsTaken || 0,
-          dots: params.isDot ? 1 : 0,
-          extras: params.isExtra ? 1 : 0,
           maidens: params.isMaiden ? 1 : 0,
           isSuperBall: params.isSuperBall
         });
@@ -401,8 +399,6 @@ export default function ScorerPage() {
       } else {
         const ballPoints = calculateBowlingPoints({
           wickets: params.wicketsTaken || 0,
-          dots: params.isDot ? 1 : 0,
-          extras: params.isExtra ? 1 : 0,
           maidens: params.isMaiden ? 1 : 0,
           isSuperBall: params.isSuperBall
         });
