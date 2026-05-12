@@ -1776,7 +1776,7 @@ export default function ScorerPage() {
                   <span>Inning: {inning}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                   <span>Real-time Sync</span>
                 </div>
               </div>
@@ -1878,7 +1878,7 @@ export default function ScorerPage() {
                 {isMatchOver && (
                   <Button
                     onClick={() => handleMatchCompletion(inning === 2 && target && runs >= target ? battingTeam : bowlingTeam)}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-black uppercase"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase"
                   >
                     Finalize & End Match
                   </Button>

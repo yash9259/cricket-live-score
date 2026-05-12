@@ -15,7 +15,7 @@
     --popover: 220 18% 10%;
     --popover-foreground: 0 0% 95%;
 
-    --primary: 199 87% 85%;
+    --primary: 199 55% 77%;
     --primary-foreground: 220 20% 6%;
 
     --secondary: 45 100% 50%;
@@ -45,14 +45,17 @@
     --sidebar-border: 220 15% 18%;
     --sidebar-ring: 199 87% 85%;
 
-    /* custom Cricbuzz-style palette */
-    --cric-green: 165 100% 25%;
-    --cric-green-light: 165 100% 35%;
+    /* custom blue palette instead of green */
+    --cric-green: 199 55% 50%;
+    --cric-green-light: 199 55% 85%;
     --cric-yellow: 48 100% 50%;
     --cric-red: 354 70% 50%;
     
-    --primary: 165 100% 30%; /* Set primary to Cricbuzz green */
-    --primary-foreground: 0 0% 100%;
+    --primary: 199 55% 77%; /* Set primary to new blue */
+    --primary-foreground: 220 20% 6%;
+    --neon-green: 199 100% 70%;
+    --neon-orange: 25 100% 50%;
+    --neon-yellow: 48 100% 50%;
   }
 }
 
@@ -107,7 +110,7 @@
     z-index: -1;
   }
 
-  .neon-text-green {
+  .neon-text-primary {
     text-shadow: 0 0 10px hsl(var(--neon-green) / 0.5), 0 0 30px hsl(var(--neon-green) / 0.2);
   }
 

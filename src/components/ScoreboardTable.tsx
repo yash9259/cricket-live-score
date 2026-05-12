@@ -164,7 +164,7 @@ export function ScoreboardTable({ matchId, data }: ScoreboardTableProps) {
                             {isStriker && <span className="ml-1 text-primary">*</span>}
                           </span>
                           {(isStriker || isNonStriker) && (
-                            <span className="text-[9px] font-black text-emerald-500 uppercase tracking-tighter">
+                            <span className="text-[9px] font-black text-primary uppercase tracking-tighter">
                               {isStriker ? "Batting" : ""}
                             </span>
                           )}

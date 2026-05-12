@@ -76,7 +76,7 @@ export default function MatchDetailPage() {
                   </div>
                 )}
                 {match.status === "completed" && (
-                  <div className="px-2 py-0.5 rounded bg-emerald-500 text-white text-[10px] font-bold">
+                  <div className="px-2 py-0.5 rounded bg-primary text-primary-foreground text-[10px] font-bold">
                     RESULT
                   </div>
                 )}

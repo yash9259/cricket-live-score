@@ -1000,7 +1000,7 @@ export default function AdminPage() {
                                   }}
                                 >
                                   <SelectTrigger className={`h-7 w-28 text-[10px] font-black uppercase tracking-wider border-none focus:ring-0 ${
-                                    match.status === "live" ? "bg-emerald-500/10 text-emerald-500" : 
+                                    match.status === "live" ? "bg-primary/20 text-primary" : 
                                     match.status === "completed" ? "bg-muted text-muted-foreground" :
                                     "bg-primary/10 text-primary"
                                   }`}>
@@ -1154,7 +1154,7 @@ export default function AdminPage() {
                       </svg>
                       Duplicates
                     </button>
-                    <Button onClick={() => setIsManualRegOpen(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm">
+                    <Button onClick={() => setIsManualRegOpen(true)} className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-sm">
                       <Plus className="h-4 w-4 mr-2" /> Manual Reg
                     </Button>
                     <Button onClick={exportRegistrationsCsv} variant="outline" className="border-primary/30 text-primary hover:bg-primary/10 shadow-sm">
@@ -1350,7 +1350,7 @@ export default function AdminPage() {
                       }
                     }}
                     className={`shrink-0 shadow-sm transition-all ${isRegistrationOnlyMode
-                        ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                        ? "bg-primary hover:bg-primary/90 text-primary-foreground"
                         : "bg-muted-foreground text-white hover:bg-muted-foreground/90"
                       }`}
                   >
@@ -1383,7 +1383,7 @@ export default function AdminPage() {
                       }
                     }}
                     className={`shrink-0 shadow-sm transition-all ${isRegistrationsEnabled
-                        ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                        ? "bg-primary hover:bg-primary/90 text-primary-foreground"
                         : "bg-destructive hover:bg-destructive/90 text-white"
                       }`}
                   >
@@ -1624,7 +1624,7 @@ function StatCard({
           <Icon className="h-5 w-5" />
         </div>
         {trend && (
-          <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-full ${trend === "Live" ? "bg-emerald-500/10 text-emerald-500" : "bg-primary/10 text-primary"
+          <span className={`text-[10px] uppercase tracking-wider font-bold px-2 py-1 rounded-full ${trend === "Live" ? "bg-primary/20 text-primary" : "bg-primary/10 text-primary"
             }`}>
             {trend}
           </span>

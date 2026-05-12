@@ -175,8 +175,8 @@ export function ScoreBook({
                                     b {balls.find(bl => bl.batsman === b.name && bl.isWicket)?.bowler || "Bowler"}
                                 </span>
                             ) : (
-                                <span className="flex items-center gap-1.5 text-green-500">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                                <span className="flex items-center gap-1.5 text-primary">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
                                     Not Out
                                 </span>
                             )}

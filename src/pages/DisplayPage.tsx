@@ -27,7 +27,7 @@ function AnimationOverlay({ type, id, lastEvent }: { type: string, id: number, l
     "no-ball": { text: "NO BALL", color: "bg-neon-yellow text-slate-900", sub: "+2 RUNS & FREE HIT" },
     "wicket": { text: "OUT!", color: "bg-destructive text-white", sub: "BATSMAN IS GONE" },
     "six": { text: "6", color: "bg-primary text-white", sub: "MAXIMUM!" },
-    "four": { text: "4", color: "bg-emerald-500 text-white", sub: "BOUNDARY!" },
+    "four": { text: "4", color: "bg-primary text-primary-foreground", sub: "BOUNDARY!" },
     "super-ball": {
       text: superBallDoubled ? `⚡${superBallDoubled}` : "⚡",
       color: "bg-gradient-to-br from-yellow-400 to-amber-500 text-slate-900",
@@ -163,7 +163,7 @@ export default function DisplayPage() {
             <p className="font-display text-2xl md:text-4xl font-bold text-foreground uppercase tracking-wide mt-4">
               {live.battingTeam} vs {live.bowlingTeam}
             </p>
-            <p className="font-display text-7xl md:text-9xl font-bold text-primary neon-text-green mt-6">
+            <p className="font-display text-7xl md:text-9xl font-bold text-primary neon-text-primary mt-6">
               {live.runs}<span className="text-4xl md:text-6xl text-muted-foreground">/{live.wickets}</span>
             </p>
             <p className="font-display text-2xl md:text-3xl text-muted-foreground mt-4">({live.overs}.{live.balls} ov)</p>

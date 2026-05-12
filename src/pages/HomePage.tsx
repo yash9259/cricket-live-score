@@ -60,7 +60,7 @@ export default function HomePage() {
             </div>
             <h1 className="font-display text-3xl sm:text-5xl md:text-7xl font-bold leading-tight text-foreground">
               VAGAD RAGHUVANSHI <br className="hidden sm:block" /> PARIVAR - BHUJ <br />
-              <span className="text-primary neon-text-green">BOX CRICKET</span>
+              <span className="text-primary neon-text-primary">BOX CRICKET</span>
             </h1>
             <p className="mt-6 text-base md:text-lg text-muted-foreground max-w-lg mx-auto md:mx-0">
               Experience thrilling box cricket action. Follow live scores, and compete for glory!

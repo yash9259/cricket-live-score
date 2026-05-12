@@ -67,7 +67,7 @@ export default function MatchCard({ match }: { match: any }) {
         {/* Match Footer / Result */}
         <div className="px-4 py-3 border-t border-border bg-muted/5">
           {match.status === "completed" && match.winnerName ? (
-            <p className="text-xs font-bold text-emerald-500 uppercase tracking-wide">
+            <p className="text-xs font-bold text-primary uppercase tracking-wide">
               {match.winnerName} won by {match.resultMessage || "clear margin"}
             </p>
           ) : match.status === "live" ? (
