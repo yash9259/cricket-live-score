@@ -20,8 +20,9 @@ export default function HomePage() {
   
   const liveScore = useQuery(api.liveScore.getCurrent);
   const registrationStats = useQuery(api.registrations.registrationStats);
-  const leaderboard = useQuery(api.matches.getSeriesLeaderboard) ?? [];
-  const topPerformers = leaderboard.slice(0, 3);
+  const homeStats = useQuery(api.matches.getHomeStats);
+  const matchesWithMoM = useQuery(api.matches.getMatchesWithMoM) ?? [];
+  const completedWithMoM = matchesWithMoM.filter(m => m.status === "completed").slice(0, 4);
 
   const heroImage = {
     src: "https://images.unsplash.com/photo-1593341646782-e0b495cff86d?auto=format&fit=crop&w=2000&q=80",
@@ -148,44 +149,59 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* Top Players */}
+      {/* Matches & MOM */}
       <section className="py-16 bg-primary/5">
         <div className="container mx-auto px-4">
           <h2 className="font-display text-3xl font-bold text-foreground mb-8 flex items-center gap-2">
-            <Trophy className="h-7 w-7 text-neon-yellow" /> Tournament Leaders
+            <Trophy className="h-7 w-7 text-neon-yellow" /> Match Results & MOM
           </h2>
-          <div className="grid gap-8 md:grid-cols-3">
-             {topPerformers.length > 0 ? topPerformers.map((p, i) => (
-               <div key={p.playerName} className="relative rounded-2xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-                 <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-                 <div className="flex items-center gap-4 mb-4">
-                   <span className="font-display text-4xl font-black text-primary/20">#{i + 1}</span>
-                   <div>
-                     <p className="font-display text-xl font-bold text-foreground uppercase tracking-tight">{p.playerName}</p>
-                     <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{p.teamName}</p>
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+             {completedWithMoM.length > 0 ? completedWithMoM.map((m, i) => (
+               <div key={m._id} className="relative rounded-2xl border border-border bg-card p-6 shadow-sm hover:shadow-md transition-shadow overflow-hidden group">
+                 <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform" />
+                 
+                 <div className="flex flex-col gap-4">
+                   <div className="flex justify-between items-start">
+                     <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-2 py-0.5 bg-muted rounded">
+                       {m.date || "Completed"}
+                     </span>
+                     <Trophy className="h-4 w-4 text-primary opacity-40" />
                    </div>
-                 </div>
-                 <div className="flex justify-between items-end border-t border-border pt-4 mt-4">
-                   <div>
-                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Total Points</p>
-                     <p className="font-display text-4xl font-black text-primary tabular-nums">{p.total}</p>
+                   
+                   <div className="space-y-2">
+                     <p className="font-display text-base font-bold text-foreground truncate">{m.teamAName}</p>
+                     <p className="text-[10px] font-black text-primary/40 uppercase tracking-tighter">vs</p>
+                     <p className="font-display text-base font-bold text-foreground truncate">{m.teamBName}</p>
                    </div>
-                   <div className="text-right">
-                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Matches</p>
-                     <p className="font-display text-xl font-bold text-foreground">{p.matches}</p>
+
+                   <div className="pt-4 border-t border-border mt-2">
+                     <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Man of the Match</p>
+                     <div className="flex items-center gap-3">
+                       <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                         {m.manOfTheMatch?.[0] || "?"}
+                       </div>
+                       <div>
+                         <p className="font-display text-sm font-bold text-primary truncate">
+                           {m.manOfTheMatch || "Not announced"}
+                         </p>
+                         <p className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest">
+                           {m.winnerName} Team
+                         </p>
+                       </div>
+                     </div>
                    </div>
                  </div>
                </div>
              )) : (
-               <div className="col-span-full py-12 text-center text-muted-foreground italic border border-dashed border-border rounded-2xl">
-                 Leaderboard will be available once matches are completed.
+               <div className="col-span-full py-12 text-center text-muted-foreground italic border border-dashed border-border rounded-2xl bg-card/50">
+                 <p>Match results and MOM will appear here as matches complete.</p>
                </div>
              )}
           </div>
           <div className="text-center mt-12">
-            <Link to="/leaderboard">
+            <Link to="/matches?tab=completed">
               <Button variant="outline" className="h-12 px-8 border-primary/30 text-primary hover:bg-primary/10 rounded-xl font-bold uppercase tracking-widest">
-                View All Rankings <ChevronRight className="ml-1 h-4 w-4" />
+                View All Results <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
             </Link>
           </div>
@@ -195,12 +211,10 @@ export default function HomePage() {
       {/* Stats */}
       <section className="py-16 bg-card/30 border-t border-border">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 gap-6 max-w-2xl mx-auto">
             {[
-              { label: "Teams", value: `${registrationStats?.total ?? 0}`, icon: Users, color: "text-primary" },
-              { label: "Matches", value: `${allMatches.length}`, icon: Trophy, color: "text-neon-yellow" },
-              { label: "Live Runs", value: `${liveScore?.runs ?? 0}`, icon: Zap, color: "text-neon-orange" },
-              { label: "Live Wkts", value: `${liveScore?.wickets ?? 0}`, icon: Trophy, color: "text-destructive" },
+              { label: "Today's Teams", value: `${homeStats?.todayTeams ?? 0}`, icon: Users, color: "text-primary" },
+              { label: "Today's Matches", value: `${homeStats?.todayMatches ?? 0}`, icon: Trophy, color: "text-neon-yellow" },
             ].map((s) => (
               <motion.div
                 key={s.label}

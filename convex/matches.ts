@@ -582,3 +582,49 @@ export const updateStatus = mutation({
   },
 });
 
+export const getHomeStats = query({
+  args: {},
+  handler: async (ctx) => {
+    // Get today's date in YYYY-MM-DD format
+    const today = new Date().toISOString().slice(0, 10); 
+    
+    const allMatches = await ctx.db.query("matches").collect();
+    const todayMatches = allMatches.filter(m => m.date === today);
+    
+    const teamIds = new Set();
+    todayMatches.forEach(m => {
+      teamIds.add(m.teamAId.toString());
+      teamIds.add(m.teamBId.toString());
+    });
+
+    return {
+      todayTeams: teamIds.size,
+      todayMatches: todayMatches.length,
+    };
+  },
+});
+
+export const getMatchesWithMoM = query({
+  args: {},
+  handler: async (ctx) => {
+    const matches = await ctx.db.query("matches").order("desc").collect();
+    return await Promise.all(
+      matches.map(async (match) => {
+        const teamA = await ctx.db.get(match.teamAId);
+        const teamB = await ctx.db.get(match.teamBId);
+        const winner = match.winnerId ? await ctx.db.get(match.winnerId) : null;
+        
+        return {
+          _id: match._id,
+          teamAName: teamA?.teamName ?? "Unknown",
+          teamBName: teamB?.teamName ?? "Unknown",
+          winnerName: winner?.teamName ?? null,
+          status: match.status,
+          manOfTheMatch: match.manOfTheMatch,
+          date: match.date,
+          time: match.time,
+        };
+      })
+    );
+  },
+});
