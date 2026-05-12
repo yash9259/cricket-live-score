@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState, Fragment } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { motion } from "framer-motion";
-import { RotateCcw, UserCircle2, ArrowRightLeft, BarChart3, Trophy, Activity, Zap, History, LayoutDashboard, ChevronRight, AlertCircle, Info, Edit2 } from "lucide-react";
-import { Navigate, Link } from "react-router-dom";
+import { RotateCcw, UserCircle2, ArrowRightLeft, BarChart3, Trophy, Activity, Zap, History, LayoutDashboard, ChevronRight, AlertCircle, Info, Edit2, PlusCircle } from "lucide-react";
+import { Navigate, Link, useNavigate } from "react-router-dom";
 import { api } from "../../convex/_generated/api";
 import { POINTS_CONFIG, calculateBattingPoints, calculateBowlingPoints } from "../../convex/points";
 import { Button } from "@/components/ui/button";
@@ -61,6 +61,8 @@ export default function ScorerPage() {
   const completeMatch = useMutation(api.matches.completeMatch);
   const renamePlayerMutation = useMutation(api.registrations.renamePlayer);
   const renamePlayerGloballyMutation = useMutation(api.registrations.renamePlayerGlobally);
+  const createQuickTeam = useMutation(api.registrations.createQuick);
+  const navigate = useNavigate();
 
   const match = useQuery(api.matches.getById, live?.matchId ? { id: live.matchId } : "skip");
   const matches = useQuery(api.matches.list) ?? [];
@@ -124,6 +126,10 @@ export default function ScorerPage() {
   const [playerToRename, setPlayerToRename] = useState("");
   const [newPlayerName, setNewPlayerName] = useState("");
 
+  const [isQuickTeamModalOpen, setIsQuickTeamModalOpen] = useState(false);
+  const [quickTeamName, setQuickTeamName] = useState("");
+  const [quickTeamCategoryId, setQuickTeamCategoryId] = useState("");
+
   // Super Ball state
   const [showSuperBallPopup, setShowSuperBallPopup] = useState(false);
 
@@ -144,17 +150,17 @@ export default function ScorerPage() {
 
   const battingPlayers = useMemo(() => {
     if (!registrations || !battingTeam) return [];
-    
+
     // 1. Try finding by ID from selected match first (most reliable)
     let team = null;
     if (selectedMatch) {
-      const targetId = battingTeam === (selectedMatch as any).teamAName ? (selectedMatch as any).teamAId : 
-                      battingTeam === (selectedMatch as any).teamBName ? (selectedMatch as any).teamBId : null;
+      const targetId = battingTeam === (selectedMatch as any).teamAName ? (selectedMatch as any).teamAId :
+        battingTeam === (selectedMatch as any).teamBName ? (selectedMatch as any).teamBId : null;
       if (targetId) {
         team = registrations.find(r => r._id === targetId);
       }
     }
-    
+
     // 2. Fallback to name-based search
     if (!team) {
       const bTeamLower = battingTeam.trim().toLowerCase();
@@ -162,7 +168,7 @@ export default function ScorerPage() {
     }
 
     if (!team) return [striker, nonStriker].filter(Boolean) as string[];
-    
+
     const players = [team.captainName, ...team.players.map(p => (p as any).name)];
     const current = [striker, nonStriker].filter(n => n && !players.includes(n));
     return [...new Set([...players, ...current])];
@@ -174,13 +180,13 @@ export default function ScorerPage() {
     // 1. Try finding by ID from selected match first
     let team = null;
     if (selectedMatch) {
-      const targetId = bowlingTeam === (selectedMatch as any).teamAName ? (selectedMatch as any).teamAId : 
-                      bowlingTeam === (selectedMatch as any).teamBName ? (selectedMatch as any).teamBId : null;
+      const targetId = bowlingTeam === (selectedMatch as any).teamAName ? (selectedMatch as any).teamAId :
+        bowlingTeam === (selectedMatch as any).teamBName ? (selectedMatch as any).teamBId : null;
       if (targetId) {
         team = registrations.find(r => r._id === targetId);
       }
     }
-    
+
     // 2. Fallback to name-based search
     if (!team) {
       const bTeamLower = bowlingTeam.trim().toLowerCase();
@@ -338,7 +344,7 @@ export default function ScorerPage() {
         const newFours = (b.fours || 0) + (params.isFour ? 1 : 0);
         const newSixes = (b.sixes || 0) + (params.isSix ? 1 : 0);
         const newIsOut = params.isOut !== undefined ? params.isOut : b.isOut;
-        
+
         const ballPoints = calculateBattingPoints({
           runs: params.runsScored || 0,
           fours: params.isFour ? 1 : 0,
@@ -363,10 +369,10 @@ export default function ScorerPage() {
           sixes: params.isSix ? 1 : 0,
           isSuperBall: params.isSuperBall
         });
-        nextBatsmen.push({ 
-          name: params.batsmanName, 
-          runs: params.runsScored || 0, 
-          balls: params.ballsFaced || 0, 
+        nextBatsmen.push({
+          name: params.batsmanName,
+          runs: params.runsScored || 0,
+          balls: params.ballsFaced || 0,
           isOut: params.isOut || false,
           fours: params.isFour ? 1 : 0,
           sixes: params.isSix ? 1 : 0,
@@ -402,10 +408,10 @@ export default function ScorerPage() {
           maidens: params.isMaiden ? 1 : 0,
           isSuperBall: params.isSuperBall
         });
-        nextBowlers.push({ 
-          name: params.bowlerName, 
-          runs: params.runsConceded || 0, 
-          wickets: params.wicketsTaken || 0, 
+        nextBowlers.push({
+          name: params.bowlerName,
+          runs: params.runsConceded || 0,
+          wickets: params.wicketsTaken || 0,
           balls: params.ballsBowled || 0,
           dots: params.isDot ? 1 : 0,
           maidens: params.isMaiden ? 1 : 0,
@@ -415,8 +421,8 @@ export default function ScorerPage() {
       }
     }
 
-    return isInn1 
-      ? { batsmenInning1: nextBatsmen, bowlersInning1: nextBowlers } 
+    return isInn1
+      ? { batsmenInning1: nextBatsmen, bowlersInning1: nextBowlers }
       : { batsmenInning2: nextBatsmen, bowlersInning2: nextBowlers };
   };
 
@@ -443,9 +449,10 @@ export default function ScorerPage() {
 
   const handleRuns = async (value: number, isSuperBallMode = false) => {
     snapshotCurrent();
-    // On super ball, double normal runs
-    const shouldDoubleRuns = isSuperBallMode || freeHitPending;
+    // On super ball, double normal runs. Free hit does NOT double runs.
+    const shouldDoubleRuns = isSuperBallMode;
     const effectiveValue = shouldDoubleRuns ? value * 2 : value;
+
     const { nextBalls, nextOvers } = addBallProgress();
     const eventText = isSuperBallMode ? `⚡${value}×2=${effectiveValue}` : `+${value}`;
     const nextBallHistory = balls === 0 ? [eventText] : [...ballHistory, eventText].slice(-6);
@@ -543,16 +550,16 @@ export default function ScorerPage() {
 
 
     const statsUpdates = updatePlayerStats({
-        batsmanName: striker,
-        runsScored: effectiveValue,
-        ballsFaced: 1,
-        bowlerName: bowler,
-        runsConceded: effectiveValue,
-        ballsBowled: 1,
-        isDot: effectiveValue === 0,
-        isFour: value === 4,
-        isSix: value === 6,
-        isSuperBall: isSuperBallMode
+      batsmanName: striker,
+      runsScored: effectiveValue,
+      ballsFaced: 1,
+      bowlerName: bowler,
+      runsConceded: effectiveValue,
+      ballsBowled: 1,
+      isDot: effectiveValue === 0,
+      isFour: value === 4,
+      isSix: value === 6,
+      isSuperBall: isSuperBallMode
     });
 
     Object.assign(next, statsUpdates);
@@ -631,8 +638,12 @@ export default function ScorerPage() {
     } else if (nextBalls === 0 && nextOvers > overs) {
       nextStriker = nonStriker;
       nextNonStriker = "";
+    }
+
+    if (nextBalls === 0 && nextOvers > overs) {
       overChanged = true;
     }
+
 
     // Super Ball: wicket counts as 2 wickets
     const wicketsToAdd = isSuperBallMode ? 2 : 1;
@@ -674,27 +685,27 @@ export default function ScorerPage() {
 
 
     let statsUpdates = updatePlayerStats({
-        batsmanName: striker,
-        runsScored: 0,
-        ballsFaced: 1,
-        isOut: true,
-        bowlerName: bowler,
-        runsConceded: 0,
-        wicketsTaken: wicketsToAdd,
-        ballsBowled: 1,
-        isDot: true,
-        isSuperBall: isSuperBallMode
+      batsmanName: striker,
+      runsScored: 0,
+      ballsFaced: 1,
+      isOut: true,
+      bowlerName: bowler,
+      runsConceded: 0,
+      wicketsTaken: wicketsToAdd,
+      ballsBowled: 1,
+      isDot: true,
+      isSuperBall: isSuperBallMode
     });
 
     if (isSuperBallMode && nonStriker) {
-        statsUpdates = updatePlayerStats({
-            batsmanName: nonStriker,
-            isOut: true,
-            currentBatsmen: statsUpdates.batsmenInning1 || statsUpdates.batsmenInning2,
-            currentBowlers: statsUpdates.bowlersInning1 || statsUpdates.bowlersInning2,
-        });
+      statsUpdates = updatePlayerStats({
+        batsmanName: nonStriker,
+        isOut: true,
+        currentBatsmen: statsUpdates.batsmenInning1 || statsUpdates.batsmenInning2,
+        currentBowlers: statsUpdates.bowlersInning1 || statsUpdates.bowlersInning2,
+      });
     }
-    
+
     Object.assign(next, statsUpdates);
     if (statsUpdates.batsmenInning1) setBatsmenInning1(statsUpdates.batsmenInning1);
     if (statsUpdates.bowlersInning1) setBowlersInning1(statsUpdates.bowlersInning1);
@@ -780,9 +791,9 @@ export default function ScorerPage() {
 
 
     const statsUpdates = updatePlayerStats({
-        bowlerName: bowler,
-        runsConceded: 2,
-        isExtra: true,
+      bowlerName: bowler,
+      runsConceded: 2,
+      isExtra: true,
     });
     Object.assign(next, statsUpdates);
     if (statsUpdates.batsmenInning1) setBatsmenInning1(statsUpdates.batsmenInning1);
@@ -837,12 +848,12 @@ export default function ScorerPage() {
 
 
     const statsUpdates = updatePlayerStats({
-        batsmanName: striker,
-        runsScored: extraRuns,
-        ballsFaced: extraRuns > 0 ? 1 : 0,
-        bowlerName: bowler,
-        runsConceded: totalAdded,
-        isExtra: true,
+      batsmanName: striker,
+      runsScored: extraRuns,
+      ballsFaced: extraRuns > 0 ? 1 : 0,
+      bowlerName: bowler,
+      runsConceded: totalAdded,
+      isExtra: true,
     });
     Object.assign(next, statsUpdates);
     if (statsUpdates.batsmenInning1) setBatsmenInning1(statsUpdates.batsmenInning1);
@@ -852,7 +863,7 @@ export default function ScorerPage() {
     setRuns(next.runs);
     setLastEvent(next.lastEvent);
     setBowlerRuns(next.bowlerRuns);
-    
+
     // Update local striker stats if it's the current striker
     if (extraRuns > 0) {
       setStrikerRuns(strikerRuns + extraRuns);
@@ -1138,10 +1149,10 @@ export default function ScorerPage() {
     try {
       const winner = registrations?.find(r => r.teamName === winningTeamName);
 
-      const fScoreA = inning === 1 
-        ? { runs, wickets, overs, balls } 
+      const fScoreA = inning === 1
+        ? { runs, wickets, overs, balls }
         : (firstInningScore || { runs: 0, wickets: 0, overs: 0, balls: 0 });
-      
+
       await completeMatch({
         token: sessionToken,
         matchId: matchId as any,
@@ -1156,12 +1167,34 @@ export default function ScorerPage() {
         title: "Success",
         description: "Match finalized successfully!",
       });
+
+      // Redirect to admin matches tab (match making)
+      navigate("/admin?tab=matches");
+
     } catch (error: any) {
       toast({
         title: "Error",
         description: error.message || "Failed to finalize match",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleQuickTeamCreate = async () => {
+    if (!quickTeamName || !quickTeamCategoryId) return;
+    try {
+      const category = categories.find(c => c.id === quickTeamCategoryId);
+      await createQuickTeam({
+        token: sessionToken,
+        teamName: quickTeamName,
+        categoryId: quickTeamCategoryId,
+        categoryLabel: category?.label || quickTeamCategoryId
+      });
+      toast({ title: "Team Created", description: `"${quickTeamName}" added successfully.` });
+      setIsQuickTeamModalOpen(false);
+      setQuickTeamName("");
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
     }
   };
 
@@ -1277,14 +1310,14 @@ export default function ScorerPage() {
               Live Sync Active
             </div>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 border border-primary/20">
-               <Trophy className="h-4 w-4 text-primary" />
-               <span className="text-sm font-bold text-primary">Inn {inning}</span>
+              <Trophy className="h-4 w-4 text-primary" />
+              <span className="text-sm font-bold text-primary">Inn {inning}</span>
             </div>
-            <Button 
-              variant={showScoreboardOnDisplay ? "destructive" : "default"} 
+            <Button
+              variant={showScoreboardOnDisplay ? "destructive" : "default"}
               size="sm"
               className="hidden sm:flex gap-2"
               onClick={() => {
@@ -1293,38 +1326,48 @@ export default function ScorerPage() {
                 syncScore({ showScoreboard: nextVal });
               }}
             >
-              <BarChart3 className="w-4 h-4" /> 
+              <BarChart3 className="w-4 h-4" />
               {showScoreboardOnDisplay ? "Stop Display" : "Broadcast"}
             </Button>
             <Button onClick={handleReset} variant="ghost" size="icon" className="text-muted-foreground hover:text-destructive">
-               <RotateCcw className="h-5 w-5" />
+              <RotateCcw className="h-5 w-5" />
             </Button>
           </div>
         </div>
       </header>
 
       <main className="container max-w-6xl py-6 space-y-6">
-        
+
         {/* MATCH SELECTION & SWAP INNINGS */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            
+
             {/* MATCH SELECTION SECTION */}
             <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
               <div className="border-b border-border bg-muted/30 px-6 py-3 flex justify-between items-center">
-                 <h3 className="text-sm font-bold flex items-center gap-2">
-                   <LayoutDashboard className="h-4 w-4 text-primary" /> Select Match
-                 </h3>
-                 {matchId && (
-                   <span className="text-[10px] font-black uppercase bg-primary/20 text-primary px-2 py-0.5 rounded">
-                     Currently Scoring
-                   </span>
-                 )}
+                <h3 className="text-sm font-bold flex items-center gap-2">
+                  <LayoutDashboard className="h-4 w-4 text-primary" /> Select Match
+                </h3>
+                {matchId && (
+                  <span className="text-[10px] font-black uppercase bg-primary/20 text-primary px-2 py-0.5 rounded">
+                    Currently Scoring
+                  </span>
+                )}
               </div>
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label className="text-xs text-muted-foreground">Filter by Category</Label>
+                    <div className="flex justify-between items-center">
+                      <Label className="text-xs text-muted-foreground">Filter by Category</Label>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 px-2 text-[10px] font-bold text-primary hover:bg-primary/10 gap-1"
+                        onClick={() => setIsQuickTeamModalOpen(true)}
+                      >
+                        <PlusCircle className="h-3 w-3" /> Add Team
+                      </Button>
+                    </div>
                     <Select value={selectedCategoryId} onValueChange={setSelectedCategoryId}>
                       <SelectTrigger className="bg-muted/50 border-border">
                         <SelectValue placeholder="All Categories" />
@@ -1340,8 +1383,8 @@ export default function ScorerPage() {
 
                   <div className="space-y-2">
                     <Label className="text-xs text-muted-foreground">Select Match</Label>
-                    <Select 
-                      value={matchId || ""} 
+                    <Select
+                      value={matchId || ""}
                       onValueChange={async (id) => {
                         const selected = matches.find(m => m._id === id);
                         if (selected) {
@@ -1349,7 +1392,7 @@ export default function ScorerPage() {
                           setBattingTeam(selected.teamAName);
                           setBowlingTeam(selected.teamBName);
                           if (confirm(`Start scoring for ${selected.teamAName} vs ${selected.teamBName}?`)) {
-                             await startMatch({ token: sessionToken, matchId: selected._id as any });
+                            await startMatch({ token: sessionToken, matchId: selected._id as any });
                           }
                         }
                       }}
@@ -1361,7 +1404,16 @@ export default function ScorerPage() {
                         {categories
                           .filter(cat => selectedCategoryId === "all" || cat.id === selectedCategoryId)
                           .map(cat => {
-                            const catMatches = matches.filter(m => m.categoryId === cat.id && m.status !== "completed");
+                            // Only show live match if one exists, otherwise show scheduled matches
+                            const hasLiveMatch = matches.some(m => m.status === "live");
+                            const catMatches = matches.filter(m => {
+                              if (m.categoryId !== cat.id) return false;
+                              if (hasLiveMatch) {
+                                return m.status === "live";
+                              }
+                              return m.status === "scheduled";
+                            });
+
                             if (catMatches.length === 0) return null;
                             return (
                               <Fragment key={cat.id}>
@@ -1371,10 +1423,12 @@ export default function ScorerPage() {
                                 {catMatches.map(m => (
                                   <SelectItem key={m._id} value={m._id}>
                                     {m.teamAName} vs {m.teamBName} {m.date ? `(${m.date})` : ""}
+                                    {m.status === "live" && " (LIVE)"}
                                   </SelectItem>
                                 ))}
                               </Fragment>
                             );
+
                           })}
                       </SelectContent>
                     </Select>
@@ -1384,8 +1438,8 @@ export default function ScorerPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t border-border/50">
                   <div className="space-y-2">
                     <Label className="text-xs text-muted-foreground">Toss Winner</Label>
-                    <Select 
-                      value={tossWinner} 
+                    <Select
+                      value={tossWinner}
                       onValueChange={async (val) => {
                         setTossWinner(val);
                         if (matchId) {
@@ -1415,8 +1469,8 @@ export default function ScorerPage() {
 
                   <div className="space-y-2">
                     <Label className="text-xs text-muted-foreground">Decision</Label>
-                    <Select 
-                      value={tossDecision} 
+                    <Select
+                      value={tossDecision}
                       onValueChange={async (val: any) => {
                         setTossDecision(val);
                         if (matchId) {
@@ -1435,9 +1489,9 @@ export default function ScorerPage() {
                   </div>
 
                   <div className="flex items-end">
-                    <Button 
-                      onClick={handleInningChange} 
-                      variant="outline" 
+                    <Button
+                      onClick={handleInningChange}
+                      variant="outline"
                       className="w-full h-10 gap-2 border-primary/50 text-primary hover:bg-primary/5"
                     >
                       <RotateCcw className="h-4 w-4" />
@@ -1475,9 +1529,9 @@ export default function ScorerPage() {
                   </div>
                 </div>
                 <div className="mt-4 flex justify-end">
-                   <Button onClick={saveTeamsAndPlayers} variant="outline" size="sm" className="text-[10px] font-bold uppercase h-8 border-primary/30 text-primary hover:bg-primary/5">
-                     Save Teams
-                   </Button>
+                  <Button onClick={saveTeamsAndPlayers} variant="outline" size="sm" className="text-[10px] font-bold uppercase h-8 border-primary/30 text-primary hover:bg-primary/5">
+                    Save Teams
+                  </Button>
                 </div>
               </div>
             </div>
@@ -1486,7 +1540,7 @@ export default function ScorerPage() {
             <div className="rounded-2xl border border-primary/30 bg-card shadow-xl overflow-hidden relative">
               {/* Background Glow */}
               <div className="absolute top-0 right-0 -mr-12 -mt-12 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
-              
+
               <div className="p-8 space-y-8 relative">
                 {/* Score and Progress */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -1519,12 +1573,12 @@ export default function ScorerPage() {
                         const isCurrent = i === balls;
                         const isPast = i < balls;
                         return (
-                          <div 
-                            key={i} 
+                          <div
+                            key={i}
                             className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold transition-all border-2 
-                              ${isCurrent ? 'border-primary bg-primary/10 scale-110 shadow-lg shadow-primary/20' : 
-                                isPast ? 'border-muted bg-muted/30 text-muted-foreground' : 
-                                'border-dashed border-border text-border opacity-50'}
+                              ${isCurrent ? 'border-primary bg-primary/10 scale-110 shadow-lg shadow-primary/20' :
+                                isPast ? 'border-muted bg-muted/30 text-muted-foreground' :
+                                  'border-dashed border-border text-border opacity-50'}
                               ${ballText.includes('W') ? 'bg-destructive/10 border-destructive text-destructive' : ''}
                               ${ballText.includes('4') || ballText.includes('6') ? 'bg-primary/20 border-primary text-primary' : ''}
                               ${ballText.includes('⚡') ? 'bg-yellow-500/10 border-yellow-500 text-yellow-500' : ''}
@@ -1543,51 +1597,51 @@ export default function ScorerPage() {
                   {/* Batsmen */}
                   <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-3">
                     <div className="flex justify-between items-center text-[10px] font-black uppercase text-muted-foreground border-b border-border/50 pb-2">
-                       <span>On Strike</span>
-                       <span>Score (Balls)</span>
+                      <span>On Strike</span>
+                      <span>Score (Balls)</span>
                     </div>
                     <div className="space-y-3">
                       <div className={`flex justify-between items-center ${!striker ? 'opacity-50' : ''}`}>
-                         <div className="flex items-center gap-2">
-                             <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                             <span className="font-bold text-sm truncate max-w-[120px]">{striker || "Striker"}</span>
-                             {striker && (
-                               <button 
-                                 onClick={() => {
-                                   setPlayerToRename(striker);
-                                   setNewPlayerName(striker);
-                                   setIsRenameModalOpen(true);
-                                 }}
-                                 className="p-1 hover:bg-primary/20 rounded transition-colors"
-                               >
-                                 <Edit2 className="h-3 w-3 text-primary" />
-                               </button>
-                             )}
-                          </div>
-                         <span className="font-mono text-xs font-bold tabular-nums">
-                            {strikerRuns}<span className="text-muted-foreground font-normal">({strikerBalls})</span>
-                         </span>
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                          <span className="font-bold text-sm truncate max-w-[120px]">{striker || "Striker"}</span>
+                          {striker && (
+                            <button
+                              onClick={() => {
+                                setPlayerToRename(striker);
+                                setNewPlayerName(striker);
+                                setIsRenameModalOpen(true);
+                              }}
+                              className="p-1 hover:bg-primary/20 rounded transition-colors"
+                            >
+                              <Edit2 className="h-3 w-3 text-primary" />
+                            </button>
+                          )}
+                        </div>
+                        <span className="font-mono text-xs font-bold tabular-nums">
+                          {strikerRuns}<span className="text-muted-foreground font-normal">({strikerBalls})</span>
+                        </span>
                       </div>
                       <div className={`flex justify-between items-center ${!nonStriker ? 'opacity-50' : ''}`}>
-                         <div className="flex items-center gap-2 opacity-70">
-                             <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
-                             <span className="text-sm truncate max-w-[120px]">{nonStriker || "Non-Striker"}</span>
-                             {nonStriker && (
-                               <button 
-                                 onClick={() => {
-                                   setPlayerToRename(nonStriker);
-                                   setNewPlayerName(nonStriker);
-                                   setIsRenameModalOpen(true);
-                                 }}
-                                 className="p-1 hover:bg-muted-foreground/20 rounded transition-colors"
-                               >
-                                 <Edit2 className="h-3 w-3 text-muted-foreground" />
-                               </button>
-                             )}
-                          </div>
-                         <span className="font-mono text-xs text-muted-foreground tabular-nums">
-                            {nonStrikerRuns}<span>({nonStrikerBalls})</span>
-                         </span>
+                        <div className="flex items-center gap-2 opacity-70">
+                          <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
+                          <span className="text-sm truncate max-w-[120px]">{nonStriker || "Non-Striker"}</span>
+                          {nonStriker && (
+                            <button
+                              onClick={() => {
+                                setPlayerToRename(nonStriker);
+                                setNewPlayerName(nonStriker);
+                                setIsRenameModalOpen(true);
+                              }}
+                              className="p-1 hover:bg-muted-foreground/20 rounded transition-colors"
+                            >
+                              <Edit2 className="h-3 w-3 text-muted-foreground" />
+                            </button>
+                          )}
+                        </div>
+                        <span className="font-mono text-xs text-muted-foreground tabular-nums">
+                          {nonStrikerRuns}<span>({nonStrikerBalls})</span>
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1595,32 +1649,32 @@ export default function ScorerPage() {
                   {/* Bowler */}
                   <div className="rounded-xl border border-border bg-muted/20 p-4 space-y-3">
                     <div className="flex justify-between items-center text-[10px] font-black uppercase text-muted-foreground border-b border-border/50 pb-2">
-                       <span>Current Bowler</span>
-                       <span>Figures</span>
+                      <span>Current Bowler</span>
+                      <span>Figures</span>
                     </div>
                     <div className={`flex justify-between items-center pt-1 ${!bowler ? 'opacity-50' : ''}`}>
-                       <div className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 rounded-full bg-neon-orange" />
-                          <span className="font-bold text-sm truncate max-w-[120px] text-neon-orange">{bowler || "Bowler"}</span>
-                          {bowler && (
-                             <button 
-                               onClick={() => {
-                                 setPlayerToRename(bowler);
-                                 setNewPlayerName(bowler);
-                                 setIsRenameModalOpen(true);
-                               }}
-                               className="p-1 hover:bg-neon-orange/20 rounded transition-colors"
-                             >
-                               <Edit2 className="h-3 w-3 text-neon-orange" />
-                             </button>
-                          )}
-                       </div>
-                       <div className="text-right">
-                         <span className="font-mono text-xs font-bold tabular-nums">
-                            {bowlerWickets}<span className="text-muted-foreground font-normal">-{bowlerRuns}</span>
-                         </span>
-                         <p className="text-[10px] text-muted-foreground font-medium">{Math.floor(bowlerBalls / 6)}.{bowlerBalls % 6} Overs</p>
-                       </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-neon-orange" />
+                        <span className="font-bold text-sm truncate max-w-[120px] text-neon-orange">{bowler || "Bowler"}</span>
+                        {bowler && (
+                          <button
+                            onClick={() => {
+                              setPlayerToRename(bowler);
+                              setNewPlayerName(bowler);
+                              setIsRenameModalOpen(true);
+                            }}
+                            className="p-1 hover:bg-neon-orange/20 rounded transition-colors"
+                          >
+                            <Edit2 className="h-3 w-3 text-neon-orange" />
+                          </button>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <span className="font-mono text-xs font-bold tabular-nums">
+                          {bowlerWickets}<span className="text-muted-foreground font-normal">-{bowlerRuns}</span>
+                        </span>
+                        <p className="text-[10px] text-muted-foreground font-medium">{Math.floor(bowlerBalls / 6)}.{bowlerBalls % 6} Overs</p>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1629,15 +1683,15 @@ export default function ScorerPage() {
                 <div className={`rounded-xl border p-4 sm:p-6 space-y-4 sm:space-y-6 transition-all ${isSuperBall && canScore ? "border-yellow-400/60 bg-yellow-500/5 shadow-[0_0_40px_-10px_rgba(234,179,8,0.3)]" : "border-border bg-muted/30"}`}>
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2 sm:gap-3">
-                       <Zap className={`h-4 w-4 sm:h-5 sm:w-5 ${isSuperBall ? 'text-yellow-400 fill-yellow-400 animate-pulse' : 'text-muted-foreground'}`} />
-                       <span className={`text-[10px] sm:text-xs font-black uppercase tracking-widest ${isSuperBall ? 'text-yellow-400' : 'text-muted-foreground'}`}>
-                         {isSuperBall ? "⚡ Super Ball" : freeHitPending ? "🟢 Free Hit" : "Regular"}
-                       </span>
+                      <Zap className={`h-4 w-4 sm:h-5 sm:w-5 ${isSuperBall ? 'text-yellow-400 fill-yellow-400 animate-pulse' : 'text-muted-foreground'}`} />
+                      <span className={`text-[10px] sm:text-xs font-black uppercase tracking-widest ${isSuperBall ? 'text-yellow-400' : 'text-muted-foreground'}`}>
+                        {isSuperBall ? "⚡ Super Ball" : freeHitPending ? "🟢 Free Hit" : "Regular"}
+                      </span>
                     </div>
-                    <Button 
-                      onClick={handleUndo} 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      onClick={handleUndo}
+                      variant="ghost"
+                      size="sm"
                       className="text-muted-foreground hover:text-foreground h-7 gap-1 sm:gap-1.5 text-[9px] sm:text-[10px] font-bold uppercase px-2"
                     >
                       <RotateCcw className="h-3 w-3" /> <span className="hidden xs:inline">Undo Last</span><span className="xs:hidden">Undo</span>
@@ -1653,8 +1707,8 @@ export default function ScorerPage() {
                         className={`h-12 sm:h-16 text-lg sm:text-xl font-black rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-30
                           ${isSuperBall && canScore && n > 0
                             ? "bg-yellow-400 text-black hover:bg-yellow-300 ring-2 ring-yellow-400/20"
-                            : n === 4 || n === 6 
-                              ? "bg-primary text-white hover:bg-primary/90" 
+                            : n === 4 || n === 6
+                              ? "bg-primary text-white hover:bg-primary/90"
                               : "bg-background border border-border text-foreground hover:bg-muted"
                           }`}
                       >
@@ -1676,68 +1730,68 @@ export default function ScorerPage() {
                       className="h-12 sm:h-14 text-[10px] sm:text-sm font-black uppercase tracking-wider rounded-xl shadow-lg shadow-destructive/20 active:scale-95 disabled:opacity-30"
                     >
                       {freeHitPending && !isSuperBall ? (
-                         <span className="flex items-center gap-1.5"><Info className="h-4 w-4" /> Free Hit</span>
+                        <span className="flex items-center gap-1.5"><Info className="h-4 w-4" /> Free Hit</span>
                       ) : isSuperBall && canScore ? (
-                         <span className="flex flex-col items-center"><span>Double Wicket</span><span className="text-[8px] opacity-70 uppercase">⚡ Super Ball</span></span>
+                        <span className="flex flex-col items-center"><span>Double Wicket</span><span className="text-[8px] opacity-70 uppercase">⚡ Super Ball</span></span>
                       ) : "Wicket"}
                     </Button>
-                    
-                    <Button 
-                      disabled={!canScore} 
-                      onClick={() => handleExtra("WIDE")} 
-                      variant="outline" 
+
+                    <Button
+                      disabled={!canScore}
+                      onClick={() => handleExtra("WIDE")}
+                      variant="outline"
                       className="h-12 sm:h-14 border-neon-orange/40 text-neon-orange hover:bg-neon-orange/10 text-[10px] sm:text-sm font-black uppercase tracking-wider rounded-xl active:scale-95 disabled:opacity-30"
                     >
                       Wide <span className="ml-1 opacity-60 text-[8px] sm:text-xs">(2)</span>
                     </Button>
 
                     <div className="flex flex-row sm:flex-col gap-1">
-                      <Button 
-                        disabled={!canScore} 
-                        onClick={() => handleExtra("NO BALL")} 
-                        variant="outline" 
+                      <Button
+                        disabled={!canScore}
+                        onClick={() => handleExtra("NO BALL")}
+                        variant="outline"
                         className={`h-12 sm:h-8 flex-1 sm:flex-none border-neon-yellow/40 text-neon-yellow hover:bg-neon-yellow/10 font-black uppercase tracking-tighter text-[9px] rounded-xl sm:rounded-lg active:scale-95 ${!isSuperBall ? 'sm:h-14 sm:text-xs' : ''}`}
                       >
                         NB (2 only)
                       </Button>
                       <Select onValueChange={(v) => handleNoBallWithRuns(Number(v), isSuperBall)}>
-                         <SelectTrigger className="h-12 sm:h-8 flex-1 sm:flex-none bg-yellow-400/10 border-yellow-400/30 text-yellow-400 text-[9px] font-black uppercase rounded-xl sm:rounded-lg">
-                            <SelectValue placeholder="NB + RUNS" />
-                         </SelectTrigger>
-                         <SelectContent>
-                            {[1, 2, 3, 4, 6].map(r => (
-                              <SelectItem key={r} value={r.toString()}>NB + {r} ({2 + r})</SelectItem>
-                            ))}
-                         </SelectContent>
+                        <SelectTrigger className="h-12 sm:h-8 flex-1 sm:flex-none bg-yellow-400/10 border-yellow-400/30 text-yellow-400 text-[9px] font-black uppercase rounded-xl sm:rounded-lg">
+                          <SelectValue placeholder="NB + RUNS" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 6].map(r => (
+                            <SelectItem key={r} value={r.toString()}>NB + {r} ({2 + r})</SelectItem>
+                          ))}
+                        </SelectContent>
                       </Select>
                     </div>
                   </div>
                 </div>
               </div>
-              
+
               {/* STATUS FOOTER */}
               <div className="bg-muted/50 px-8 py-3 border-t border-border/50 flex justify-between items-center text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                 <div className="flex items-center gap-4">
-                    <span>Recent: {lastEvent || "None"}</span>
-                    <span>Inning: {inning}</span>
-                 </div>
-                 <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                    <span>Real-time Sync</span>
-                 </div>
+                <div className="flex items-center gap-4">
+                  <span>Recent: {lastEvent || "None"}</span>
+                  <span>Inning: {inning}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <span>Real-time Sync</span>
+                </div>
               </div>
             </div>
           </div>
 
           {/* SIDEBAR: TEAM MANAGEMENT & SUMMARY */}
           <div className="space-y-6">
-            
+
             {/* PLAYER SELECTION CARD */}
             <div className="rounded-2xl border border-border bg-card shadow-sm p-6 space-y-6">
               <h3 className="text-sm font-bold flex items-center gap-2 text-foreground">
-                 <UserCircle2 className="h-4 w-4 text-primary" /> Active Players
+                <UserCircle2 className="h-4 w-4 text-primary" /> Active Players
               </h3>
-              
+
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-[10px] uppercase font-black text-muted-foreground">Striker (On Strike)</Label>
@@ -1790,45 +1844,45 @@ export default function ScorerPage() {
             {/* QUICK STATS CARD */}
             <div className="rounded-2xl border border-border bg-card shadow-sm p-6 space-y-4">
               <h3 className="text-sm font-bold flex items-center gap-2">
-                 <BarChart3 className="h-4 w-4 text-primary" /> Quick Review
+                <BarChart3 className="h-4 w-4 text-primary" /> Quick Review
               </h3>
-              
-              <div className="space-y-3">
-                 <div className="flex justify-between items-center p-3 rounded-xl bg-muted/20 border border-border/50">
-                    <span className="text-xs font-medium">Extra Runs</span>
-                    <span className="text-xs font-bold">{bowlerRuns - (strikerRuns + nonStrikerRuns)}</span>
-                 </div>
-                 <div className="flex justify-between items-center p-3 rounded-xl bg-muted/20 border border-border/50">
-                    <span className="text-xs font-medium">Current RR</span>
-                    <span className="text-xs font-bold text-primary">
-                       {overs > 0 || balls > 0 ? (runs / ((overs * 6 + balls) / 6)).toFixed(2) : "0.00"}
-                    </span>
-                 </div>
-                 <Button 
-                   onClick={() => setIsSummaryModalOpen(true)} 
-                   variant="secondary" 
-                   className="w-full text-xs font-bold uppercase tracking-wider py-5"
-                 >
-                   Open Full Scorecard
-                 </Button>
 
-                 <Button 
-                    onClick={() => setIsScoreBookOpen(true)} 
-                    variant="outline" 
-                    className="w-full text-xs font-bold uppercase tracking-wider py-5 border-primary/30 text-primary hover:bg-primary/5"
+              <div className="space-y-3">
+                <div className="flex justify-between items-center p-3 rounded-xl bg-muted/20 border border-border/50">
+                  <span className="text-xs font-medium">Extra Runs</span>
+                  <span className="text-xs font-bold">{bowlerRuns - (strikerRuns + nonStrikerRuns)}</span>
+                </div>
+                <div className="flex justify-between items-center p-3 rounded-xl bg-muted/20 border border-border/50">
+                  <span className="text-xs font-medium">Current RR</span>
+                  <span className="text-xs font-bold text-primary">
+                    {overs > 0 || balls > 0 ? (runs / ((overs * 6 + balls) / 6)).toFixed(2) : "0.00"}
+                  </span>
+                </div>
+                <Button
+                  onClick={() => setIsSummaryModalOpen(true)}
+                  variant="secondary"
+                  className="w-full text-xs font-bold uppercase tracking-wider py-5"
+                >
+                  Open Full Scorecard
+                </Button>
+
+                <Button
+                  onClick={() => setIsScoreBookOpen(true)}
+                  variant="outline"
+                  className="w-full text-xs font-bold uppercase tracking-wider py-5 border-primary/30 text-primary hover:bg-primary/5"
+                >
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  Check Score Book
+                </Button>
+
+                {isMatchOver && (
+                  <Button
+                    onClick={() => handleMatchCompletion(inning === 2 && target && runs >= target ? battingTeam : bowlingTeam)}
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-black uppercase"
                   >
-                    <BookOpen className="w-4 h-4 mr-2" />
-                    Check Score Book
+                    Finalize & End Match
                   </Button>
-                 
-                 {isMatchOver && (
-                   <Button 
-                     onClick={() => handleMatchCompletion(inning === 2 && target && runs >= target ? battingTeam : bowlingTeam)} 
-                     className="w-full bg-green-600 hover:bg-green-700 text-white font-black uppercase"
-                   >
-                     Finalize & End Match
-                   </Button>
-                 )}
+                )}
               </div>
             </div>
 
@@ -1842,19 +1896,63 @@ export default function ScorerPage() {
           <div className="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-white/20 rounded-full blur-2xl" />
           <div className="relative py-8 text-center space-y-6">
             <div className="w-20 h-20 bg-black rounded-full flex items-center justify-center mx-auto shadow-2xl">
-               <Zap className="h-10 w-10 text-yellow-400 fill-yellow-400" />
+              <Zap className="h-10 w-10 text-yellow-400 fill-yellow-400" />
             </div>
             <div className="space-y-2">
               <h2 className="text-3xl font-display font-black text-black uppercase tracking-tighter italic">Super Ball!</h2>
               <p className="text-black/80 font-bold text-sm uppercase tracking-widest">Runs & Wickets are DOUBLED</p>
             </div>
-            <Button 
-              onClick={() => setShowSuperBallPopup(false)} 
+            <Button
+              onClick={() => setShowSuperBallPopup(false)}
               className="w-full bg-black text-yellow-400 hover:bg-black/90 font-black uppercase py-6 text-lg rounded-xl"
             >
               Let's Go!
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quick Team Creation Dialog */}
+      <Dialog open={isQuickTeamModalOpen} onOpenChange={setIsQuickTeamModalOpen}>
+        <DialogContent className="bg-card border-border shadow-2xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <PlusCircle className="h-5 w-5 text-primary" />
+              Quick Register Team
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground uppercase font-bold">Team Name</Label>
+              <Input
+                value={quickTeamName}
+                onChange={(e) => setQuickTeamName(e.target.value)}
+                placeholder="Enter team name..."
+                className="bg-muted/30 border-border h-11"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground uppercase font-bold">Category</Label>
+              <Select value={quickTeamCategoryId} onValueChange={setQuickTeamCategoryId}>
+                <SelectTrigger className="bg-muted/30 border-border h-11">
+                  <SelectValue placeholder="Select Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" onClick={() => setIsQuickTeamModalOpen(false)} className="flex-1">
+              Cancel
+            </Button>
+            <Button onClick={handleQuickTeamCreate} className="flex-1 bg-primary hover:bg-primary/90">
+              Create Team
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -1876,8 +1974,8 @@ export default function ScorerPage() {
             </div>
             <div className="space-y-2">
               <Label className="text-xs text-muted-foreground uppercase font-bold">New Name</Label>
-              <Input 
-                value={newPlayerName} 
+              <Input
+                value={newPlayerName}
                 onChange={(e) => setNewPlayerName(e.target.value)}
                 placeholder="Enter new name..."
                 className="bg-muted/30 border-border h-11"
@@ -1936,10 +2034,10 @@ export default function ScorerPage() {
                   <SelectValue placeholder="Select New Batsman" />
                 </SelectTrigger>
                 <SelectContent>
-                    {battingPlayers.map(name => (
-                      <SelectItem key={name} value={name} disabled={outPlayers.includes(name) || name === tempNonStriker}>
-                        {name}{outPlayers.includes(name) ? " (out)" : ""}
-                      </SelectItem>
+                  {battingPlayers.map(name => (
+                    <SelectItem key={name} value={name} disabled={outPlayers.includes(name) || name === tempNonStriker}>
+                      {name}{outPlayers.includes(name) ? " (out)" : ""}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -1953,9 +2051,9 @@ export default function ScorerPage() {
       </Dialog>
 
       {/* Scoreboard Modal */}
-      <MatchSummaryModal 
-        isOpen={isSummaryModalOpen} 
-        onClose={() => setIsSummaryModalOpen(false)} 
+      <MatchSummaryModal
+        isOpen={isSummaryModalOpen}
+        onClose={() => setIsSummaryModalOpen(false)}
         onRenamePlayer={(name) => {
           setPlayerToRename(name);
           setNewPlayerName(name);
@@ -1981,8 +2079,8 @@ export default function ScorerPage() {
       <Dialog open={isScoreBookOpen} onOpenChange={setIsScoreBookOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-slate-950 text-slate-50 border-primary/30">
           <div className="py-4">
-            <ScoreBook 
-              history={detailedBallHistory} 
+            <ScoreBook
+              history={detailedBallHistory}
               inning1Team={inning === 1 ? battingTeam : bowlingTeam}
               inning2Team={inning === 2 ? battingTeam : bowlingTeam}
               batsmenInning1={batsmenInning1}

@@ -243,3 +243,29 @@ export const renamePlayerGlobally = mutation({
     return { success: totalUpdated > 0, count: totalUpdated };
   },
 });
+
+export const createQuick = mutation({
+  args: {
+    token: v.string(),
+    teamName: v.string(),
+    categoryId: v.string(),
+    categoryLabel: v.string(),
+  },
+  handler: async (ctx, args) => {
+    await requireAdminSession(ctx, args.token);
+
+    return await ctx.db.insert("registrations", {
+      teamName: args.teamName,
+      categoryId: args.categoryId,
+      categoryLabel: args.categoryLabel,
+      captainName: "Captain",
+      captainAge: 18,
+      phone: "0000000000",
+      players: [],
+      fee: 0,
+      paymentStatus: "paid",
+      createdAt: Date.now(),
+    });
+  },
+});
+

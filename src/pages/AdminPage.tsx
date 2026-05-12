@@ -1,5 +1,5 @@
 import { Fragment, useState, useMemo, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "convex/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -54,7 +54,12 @@ export default function AdminPage() {
     setSessionToken("");
   };
 
-  const [tab, setTab] = useState<Tab>("overview");
+  const [searchParams] = useSearchParams();
+  const [tab, setTab] = useState<Tab>(() => {
+    const t = searchParams.get("tab") as Tab;
+    if (t && ["overview", "registrations", "matches", "control"].includes(t)) return t;
+    return "overview";
+  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth > 768);
   const [expandedTeamId, setExpandedTeamId] = useState<string | null>(null);
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);

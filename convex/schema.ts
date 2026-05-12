@@ -102,40 +102,40 @@ export default defineSchema({
     outPlayers: v.optional(v.array(v.string())),
     tossWinner: v.optional(v.string()),
     tossDecision: v.optional(v.union(v.literal("bat"), v.literal("bowl"))),
-    batsmenInning1: v.optional(v.array(v.object({ 
-      name: v.string(), 
-      runs: v.number(), 
-      balls: v.number(), 
+    batsmenInning1: v.optional(v.array(v.object({
+      name: v.string(),
+      runs: v.number(),
+      balls: v.number(),
       isOut: v.boolean(),
       fours: v.optional(v.number()),
       sixes: v.optional(v.number()),
       dots: v.optional(v.number()),
       points: v.optional(v.number())
     }))),
-    bowlersInning1: v.optional(v.array(v.object({ 
-      name: v.string(), 
-      runs: v.number(), 
-      wickets: v.number(), 
+    bowlersInning1: v.optional(v.array(v.object({
+      name: v.string(),
+      runs: v.number(),
+      wickets: v.number(),
       balls: v.number(),
       dots: v.optional(v.number()),
       maidens: v.optional(v.number()),
       extras: v.optional(v.number()),
       points: v.optional(v.number())
     }))),
-    batsmenInning2: v.optional(v.array(v.object({ 
-      name: v.string(), 
-      runs: v.number(), 
-      balls: v.number(), 
+    batsmenInning2: v.optional(v.array(v.object({
+      name: v.string(),
+      runs: v.number(),
+      balls: v.number(),
       isOut: v.boolean(),
       fours: v.optional(v.number()),
       sixes: v.optional(v.number()),
       dots: v.optional(v.number()),
       points: v.optional(v.number())
     }))),
-    bowlersInning2: v.optional(v.array(v.object({ 
-      name: v.string(), 
-      runs: v.number(), 
-      wickets: v.number(), 
+    bowlersInning2: v.optional(v.array(v.object({
+      name: v.string(),
+      runs: v.number(),
+      wickets: v.number(),
       balls: v.number(),
       dots: v.optional(v.number()),
       maidens: v.optional(v.number()),

@@ -12,11 +12,11 @@ export const list = query({
         const teamA = await ctx.db.get(match.teamAId);
         const teamB = await ctx.db.get(match.teamBId);
         const winner = match.winnerId ? await ctx.db.get(match.winnerId) : null;
-        
+
         // Fetch live score if status is live
         let liveScore = null;
         if (match.status === "live") {
-           liveScore = await ctx.db
+          liveScore = await ctx.db
             .query("liveScores")
             .withIndex("by_matchId", (q) => q.eq("matchId", match._id))
             .unique();
@@ -143,13 +143,13 @@ export const deleteMatch = mutation({
   },
   handler: async (ctx, args) => {
     await requireAdminSession(ctx, args.token);
-    
+
     // Cleanup associated live scores
     const liveScores = await ctx.db
       .query("liveScores")
       .withIndex("by_matchId", (q) => q.eq("matchId", args.id))
       .collect();
-    
+
     for (const score of liveScores) {
       await ctx.db.delete(score._id);
     }
@@ -168,7 +168,7 @@ export const deleteAllScheduled = mutation({
       .query("matches")
       .withIndex("by_status", (q) => q.eq("status", "scheduled"))
       .collect();
-    
+
     for (const match of scheduled) {
       await ctx.db.delete(match._id);
     }
@@ -284,15 +284,15 @@ export const completeMatch = mutation({
       // Try to find the match by team names
       const allMatches = await ctx.db.query("matches").collect();
       const registrations = await ctx.db.query("registrations").collect();
-      
+
       const teamA = registrations.find(r => r.teamName === args.teamAName);
       const teamB = registrations.find(r => r.teamName === args.teamBName);
 
       if (teamA && teamB) {
-        const foundMatch = allMatches.find(m => 
-          m.status !== "completed" && 
-          ((m.teamAId === teamA._id && m.teamBId === teamB._id) || 
-           (m.teamAId === teamB._id && m.teamBId === teamA._id))
+        const foundMatch = allMatches.find(m =>
+          m.status !== "completed" &&
+          ((m.teamAId === teamA._id && m.teamBId === teamB._id) ||
+            (m.teamAId === teamB._id && m.teamBId === teamA._id))
         );
         if (foundMatch) {
           matchId = foundMatch._id;
@@ -321,7 +321,7 @@ export const completeMatch = mutation({
       const winner = args.winnerId ? await ctx.db.get(args.winnerId) : null;
       const winnerName = winner?.teamName;
 
-      const playerStats: Record<string, { 
+      const playerStats: Record<string, {
         batting: number, bowling: number, total: number, teamId: any, teamName: string,
         runs: number, wickets: number, fours: number, sixes: number, balls: number, maidens: number
       }> = {};
@@ -329,7 +329,7 @@ export const completeMatch = mutation({
       const initializePlayer = (name: string, teamId: any, teamName: string) => {
         const key = `${teamName}:${name}`;
         if (!playerStats[key]) {
-          playerStats[key] = { 
+          playerStats[key] = {
             batting: 0, bowling: 0, total: 0, teamId, teamName,
             runs: 0, wickets: 0, fours: 0, sixes: 0, balls: 0, maidens: 0
           };
@@ -337,8 +337,8 @@ export const completeMatch = mutation({
       };
 
       const processPlayer = (
-        name: string, 
-        teamId: any, 
+        name: string,
+        teamId: any,
         teamName: string,
         stats?: { runs?: number, wickets?: number, fours?: number, sixes?: number, balls?: number, maidens?: number }
       ) => {
@@ -423,8 +423,77 @@ export const completeMatch = mutation({
       finalScoreB: args.finalScoreB,
       manOfTheMatch: momName,
     });
+
+    // Automatically start the next scheduled match in the same category
+    const nextMatch = await ctx.db
+      .query("matches")
+      .withIndex("by_categoryId", (q) => q.eq("categoryId", match.categoryId))
+      .filter((q) => q.eq(q.field("status"), "scheduled"))
+      .order("asc")
+      .first();
+
+    if (nextMatch) {
+      const teamA = await ctx.db.get(nextMatch.teamAId);
+      const teamB = await ctx.db.get(nextMatch.teamBId);
+
+      if (teamA && teamB) {
+        await ctx.db.patch(nextMatch._id, { status: "live" });
+
+        const existingLive = await ctx.db
+          .query("liveScores")
+          .withIndex("by_key", (q) => q.eq("key", "main"))
+          .unique();
+
+        const patchData = {
+          matchId: nextMatch._id,
+          battingTeam: teamA.teamName,
+          bowlingTeam: teamB.teamName,
+          runs: 0,
+          wickets: 0,
+          overs: 0,
+          balls: 0,
+          striker: "",
+          nonStriker: "",
+          bowler: "",
+          lastEvent: "Match Started",
+          inning: 1,
+          target: undefined,
+          firstInningScore: undefined,
+          strikerRuns: 0,
+          strikerBalls: 0,
+          strikerFours: 0,
+          strikerSixes: 0,
+          nonStrikerRuns: 0,
+          nonStrikerBalls: 0,
+          nonStrikerFours: 0,
+          nonStrikerSixes: 0,
+          bowlerRuns: 0,
+          bowlerWickets: 0,
+          bowlerBalls: 0,
+
+          updatedAt: Date.now(),
+          ballHistory: [],
+          detailedBallHistory: [],
+          outPlayers: [],
+          batsmenInning1: [],
+          bowlersInning1: [],
+          batsmenInning2: [],
+          bowlersInning2: [],
+        };
+
+        if (existingLive) {
+          await ctx.db.patch(existingLive._id, patchData);
+        } else {
+          await ctx.db.insert("liveScores", {
+            key: "main",
+            ...patchData,
+          });
+        }
+      }
+    }
   },
 });
+
 
 export const getSeriesLeaderboard = query({
   args: {},
@@ -454,7 +523,7 @@ export const getTopPerformers = query({
   args: {},
   handler: async (ctx) => {
     const stats = await ctx.db.query("playerMatchStats").collect();
-    
+
     const aggregated: Record<string, { playerName: string, teamName: string, runs: number, wickets: number, fours: number, sixes: number, balls: number, sr: number, economy: number }> = {};
 
     stats.forEach((s) => {

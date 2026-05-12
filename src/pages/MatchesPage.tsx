@@ -2,17 +2,19 @@ import { useState, Fragment } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { 
-  Calendar, 
-  MapPin, 
-  Clock, 
-  LayoutGrid, 
-  Table as TableIcon, 
-  ChevronRight, 
+import {
+  Calendar,
+  MapPin,
+  Clock,
+  LayoutGrid,
+  Table as TableIcon,
+  ChevronRight,
   ChevronDown,
   Trophy,
-  Activity
+  Activity,
+  Zap
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { ScoreboardTable } from "@/components/ScoreboardTable";
 import MatchCard from "@/components/MatchCard";
@@ -67,11 +69,10 @@ export default function MatchesPage() {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-6 py-2.5 rounded-xl text-sm font-bold uppercase tracking-widest transition-all whitespace-nowrap border ${
-              tab === t
+            className={`px-6 py-2.5 rounded-xl text-sm font-bold uppercase tracking-widest transition-all whitespace-nowrap border ${tab === t
                 ? "bg-primary text-primary-foreground border-primary shadow-[0_0_20px_rgba(var(--primary),0.3)]"
                 : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
-            }`}
+              }`}
           >
             {t === "live" && <span className="inline-block w-2 h-2 rounded-full bg-destructive animate-pulse mr-2" />}
             {t}
@@ -88,7 +89,7 @@ export default function MatchesPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.05 }}
             >
-               <MatchCard match={m} />
+              <MatchCard match={m} />
             </motion.div>
           ))}
         </div>
@@ -112,53 +113,53 @@ export default function MatchesPage() {
                       <tr className={`group transition-colors hover:bg-primary/5 ${isExpanded ? 'bg-primary/5' : ''}`}>
                         <td className="p-5">
                           <div className="flex items-center gap-4">
-                             <div className="flex flex-col">
-                               <div className="flex items-center gap-2">
-                                 <div className="flex flex-col">
-                                   <span className="font-display font-bold text-base">{match.teamAName}</span>
-                                   {(() => {
-                                     const score = match.status === "completed" 
-                                       ? match.finalScoreA 
-                                       : (match.status === "live" && match.liveScore)
-                                         ? (match.liveScore.battingTeam === match.teamAName 
-                                           ? { runs: match.liveScore.runs, wickets: match.liveScore.wickets, overs: match.liveScore.overs, balls: match.liveScore.balls }
-                                           : (match.liveScore.bowlingTeam === match.teamAName && match.liveScore.inning === 2)
-                                             ? match.liveScore.firstInningScore
-                                             : null)
-                                         : null;
-                                     return score ? (
-                                       <span className="text-xs font-bold text-primary">
-                                         {score.runs}/{score.wickets} ({score.overs}.{score.balls})
-                                       </span>
-                                     ) : null;
-                                   })()}
-                                 </div>
-                                 <span className="text-[10px] font-black text-muted-foreground/50">VS</span>
-                                 <div className="flex flex-col">
-                                   <span className="font-display font-bold text-base">{match.teamBName}</span>
-                                   {(() => {
-                                     const score = match.status === "completed" 
-                                       ? match.finalScoreB 
-                                       : (match.status === "live" && match.liveScore)
-                                         ? (match.liveScore.battingTeam === match.teamBName 
-                                           ? { runs: match.liveScore.runs, wickets: match.liveScore.wickets, overs: match.liveScore.overs, balls: match.liveScore.balls }
-                                           : (match.liveScore.bowlingTeam === match.teamBName && match.liveScore.inning === 2)
-                                             ? match.liveScore.firstInningScore
-                                             : null)
-                                         : null;
-                                     return score ? (
-                                       <span className="text-xs font-bold text-orange-500">
-                                         {score.runs}/{score.wickets} ({score.overs}.{score.balls})
-                                       </span>
-                                     ) : null;
-                                   })()}
-                                 </div>
-                               </div>
-                               <div className="flex items-center gap-3 mt-1 text-[11px] text-muted-foreground">
-                                 <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {new Date(match.createdAt).toLocaleDateString()}</span>
-                                 <span className="md:hidden flex items-center gap-1"><Activity className="h-3 w-3" /> {match.categoryLabel}</span>
-                               </div>
-                             </div>
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-2">
+                                <div className="flex flex-col">
+                                  <span className="font-display font-bold text-base">{match.teamAName}</span>
+                                  {(() => {
+                                    const score = match.status === "completed"
+                                      ? match.finalScoreA
+                                      : (match.status === "live" && match.liveScore)
+                                        ? (match.liveScore.battingTeam === match.teamAName
+                                          ? { runs: match.liveScore.runs, wickets: match.liveScore.wickets, overs: match.liveScore.overs, balls: match.liveScore.balls }
+                                          : (match.liveScore.bowlingTeam === match.teamAName && match.liveScore.inning === 2)
+                                            ? match.liveScore.firstInningScore
+                                            : null)
+                                        : null;
+                                    return score ? (
+                                      <span className="text-xs font-bold text-primary">
+                                        {score.runs}/{score.wickets} ({score.overs}.{score.balls})
+                                      </span>
+                                    ) : null;
+                                  })()}
+                                </div>
+                                <span className="text-[10px] font-black text-muted-foreground/50">VS</span>
+                                <div className="flex flex-col">
+                                  <span className="font-display font-bold text-base">{match.teamBName}</span>
+                                  {(() => {
+                                    const score = match.status === "completed"
+                                      ? match.finalScoreB
+                                      : (match.status === "live" && match.liveScore)
+                                        ? (match.liveScore.battingTeam === match.teamBName
+                                          ? { runs: match.liveScore.runs, wickets: match.liveScore.wickets, overs: match.liveScore.overs, balls: match.liveScore.balls }
+                                          : (match.liveScore.bowlingTeam === match.teamBName && match.liveScore.inning === 2)
+                                            ? match.liveScore.firstInningScore
+                                            : null)
+                                        : null;
+                                    return score ? (
+                                      <span className="text-xs font-bold text-orange-500">
+                                        {score.runs}/{score.wickets} ({score.overs}.{score.balls})
+                                      </span>
+                                    ) : null;
+                                  })()}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3 mt-1 text-[11px] text-muted-foreground">
+                                <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {new Date(match.createdAt).toLocaleDateString()}</span>
+                                <span className="md:hidden flex items-center gap-1"><Activity className="h-3 w-3" /> {match.categoryLabel}</span>
+                              </div>
+                            </div>
                           </div>
                         </td>
                         <td className="p-5 hidden md:table-cell">
@@ -168,13 +169,12 @@ export default function MatchesPage() {
                         </td>
                         <td className="p-5">
                           <div className="flex flex-col gap-1.5">
-                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border ${
-                              match.status === "live" 
-                                ? "bg-destructive/10 text-destructive border-destructive/20 animate-pulse" 
+                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border ${match.status === "live"
+                                ? "bg-destructive/10 text-destructive border-destructive/20 animate-pulse"
                                 : match.status === "completed"
                                   ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
                                   : "bg-muted text-muted-foreground border-border"
-                            }`}>
+                              }`}>
                               {match.status === "live" && <span className="w-1 h-1 rounded-full bg-current" />}
                               {match.status === "completed" && match.winnerName ? `${match.winnerName} WON` : match.status}
                             </span>
@@ -236,7 +236,7 @@ export default function MatchesPage() {
       {filtered.length === 0 && (
         <div className="text-center py-24 bg-card rounded-3xl border border-dashed border-border mt-8">
           <div className="bg-muted/50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-             <Activity className="h-8 w-8 text-muted-foreground opacity-20" />
+            <Activity className="h-8 w-8 text-muted-foreground opacity-20" />
           </div>
           <p className="text-muted-foreground font-medium uppercase tracking-widest text-sm">No {tab} matches found at the moment.</p>
         </div>
