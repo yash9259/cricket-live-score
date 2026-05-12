@@ -11,23 +11,23 @@ export default function MatchCard({ match }: { match: any }) {
 
   return (
     <Link to={`/match/${match._id}`}>
-      <div className="group relative rounded-xl border border-border bg-card p-5 transition-all hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5">
-        {/* Status badge */}
-        <div className="flex justify-between items-center mb-4">
-          <span className={`text-xs font-bold px-2.5 py-1 rounded-full uppercase tracking-wider ${statusColors[match.status]}`}>
-            {match.status === "live" && <span className="inline-block w-1.5 h-1.5 rounded-full bg-current mr-1.5 animate-pulse" />}
+      <div className="group relative rounded-xl border border-border bg-card hover:bg-muted/50 transition-all hover:shadow-md">
+        {/* Match Header */}
+        <div className="px-4 py-2 border-b border-border flex justify-between items-center bg-muted/20">
+          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+            {match.categoryLabel || "Match Detail"} • Bhuj
+          </p>
+          <span className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase ${match.status === 'live' ? 'text-red-500' : 'text-muted-foreground'}`}>
+            {match.status === 'live' && <span className="inline-block w-1.5 h-1.5 rounded-full bg-red-500 mr-1 animate-pulse" />}
             {match.status}
-          </span>
-          <span className="text-xs text-muted-foreground flex items-center gap-1">
-            <MapPin className="h-3 w-3" /> Bhuj, Kutch
           </span>
         </div>
 
-        {/* Teams */}
-        <div className="flex items-center justify-between gap-4">
+        {/* Teams Area */}
+        <div className="p-4 space-y-3">
           {[
-            { name: match.teamAName, color: "text-primary" },
-            { name: match.teamBName, color: "text-neon-orange" }
+            { name: match.teamAName, color: "text-foreground" },
+            { name: match.teamBName, color: "text-foreground" }
           ].map((team, idx) => {
             const score = match.status === "completed" 
               ? (idx === 0 ? match.finalScoreA : match.finalScoreB)
@@ -39,50 +39,48 @@ export default function MatchCard({ match }: { match: any }) {
                     : null)
                 : null;
 
+            const isBatting = match.status === "live" && match.liveScore?.battingTeam === team.name;
+
             return (
-              <Fragment key={team.name}>
-                <div className="flex-1 text-center">
-                  <p className="font-display text-lg font-bold text-foreground">{team.name}</p>
-                  {score && (
-                    <p className={`font-display text-2xl font-bold ${team.color} mt-1`}>
-                      {score.runs}/{score.wickets}
-                      <span className="text-sm text-muted-foreground ml-2">
-                        ({score.overs}.{score.balls})
-                      </span>
-                    </p>
-                  )}
+              <div key={team.name + idx} className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2 min-w-0">
+                  <p className={`font-display text-lg font-bold truncate ${isBatting ? 'text-primary' : 'text-foreground'}`}>
+                    {team.name}
+                    {isBatting && <span className="ml-2 text-[10px] uppercase text-primary animate-pulse font-black">● Batting</span>}
+                  </p>
                 </div>
-                {idx === 0 && <span className="font-display text-lg text-muted-foreground font-bold">VS</span>}
-              </Fragment>
+                {score ? (
+                  <p className="font-display text-xl font-black text-foreground tabular-nums">
+                    {score.runs}/{score.wickets}
+                    <span className="text-xs text-muted-foreground font-medium ml-1.5">
+                      ({score.overs}.{score.balls})
+                    </span>
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest italic opacity-40">Yet to bat</p>
+                )}
+              </div>
             );
           })}
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-center gap-4 mt-4 pt-3 border-t border-border text-xs text-muted-foreground">
-          <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {match.date || "TBD"}</span>
-          <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {match.time || "TBD"}</span>
-        </div>
-
-        <div className="flex flex-col items-center gap-2 mt-4 pt-3 border-t border-border">
-          {match.winnerName && (
-            <p className="text-center text-sm font-black uppercase tracking-widest text-emerald-500">
-              🏆 {match.winnerName} won
+        {/* Match Footer / Result */}
+        <div className="px-4 py-3 border-t border-border bg-muted/5">
+          {match.status === "completed" && match.winnerName ? (
+            <p className="text-xs font-bold text-emerald-500 uppercase tracking-wide">
+              {match.winnerName} won by {match.resultMessage || "clear margin"}
             </p>
-          )}
-          {match.manOfTheMatch && (
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-500 text-[10px] font-black uppercase tracking-widest">
-               <Zap className="h-3 w-3 fill-yellow-500" />
-               <span>MOM: {match.manOfTheMatch}</span>
+          ) : match.status === "live" ? (
+            <p className="text-xs font-medium text-primary uppercase tracking-wide">
+               {match.liveScore?.lastEvent || "Match in progress..."}
+            </p>
+          ) : (
+            <div className="flex items-center gap-4 text-[10px] text-muted-foreground font-medium">
+               <span className="flex items-center gap-1"><Calendar className="h-3 w-3" /> {match.date || "TBD"}</span>
+               <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {match.time || "TBD"}</span>
             </div>
           )}
         </div>
-        
-        {(match.tossWinner || match.liveScore?.tossWinner) && (
-          <div className="mt-2 text-[10px] text-center text-muted-foreground font-medium italic">
-            Toss: {match.tossWinner || match.liveScore?.tossWinner} chose to {match.tossDecision || match.liveScore?.tossDecision}
-          </div>
-        )}
       </div>
     </Link>
   );

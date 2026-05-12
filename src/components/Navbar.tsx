@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 const navLinks = [
   { to: "/", label: "Home" },
   { to: "/matches", label: "Matches" },
-  { to: "/leaderboard", label: "Leaderboard" },
   { to: "/register", label: "Register" },
 ];
 
@@ -20,7 +19,7 @@ export default function Navbar({ registrationOnlyMode = false }: NavbarProps) {
   const activeLinks = registrationOnlyMode ? [{ to: "/register", label: "Register" }] : navLinks;
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
+    <nav className="hidden md:block sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link to="/" className="flex items-center gap-2">
           <Trophy className="h-7 w-7 text-primary" />

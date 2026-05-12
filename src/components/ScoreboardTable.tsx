@@ -136,11 +136,11 @@ export function ScoreboardTable({ matchId, data }: ScoreboardTableProps) {
           </div>
         </div>
 
-        <div className="p-0">
+        <div className="overflow-x-auto">
           {/* Batsmen Table */}
-          <table className="w-full text-left">
+          <table className="w-full text-left min-w-[500px] md:min-w-0">
             <thead>
-              <tr className="bg-muted/30 text-[10px] uppercase font-black tracking-widest text-muted-foreground">
+              <tr className="bg-muted/50 text-[10px] uppercase font-black tracking-widest text-muted-foreground border-y border-border">
                 <th className="px-6 py-3">Batter</th>
                 <th className="px-4 py-3 text-right">R</th>
                 <th className="px-4 py-3 text-right">B</th>
@@ -149,33 +149,36 @@ export function ScoreboardTable({ matchId, data }: ScoreboardTableProps) {
                 <th className="px-6 py-3 text-right">SR</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
+            <tbody className="divide-y divide-border">
               {batsmen && batsmen.length > 0 ? batsmen.map((b: any, i: number) => {
                 const isStriker = activeTab === scoreData.inning && scoreData.striker === b.name;
                 const isNonStriker = activeTab === scoreData.inning && scoreData.nonStriker === b.name;
 
                 return (
-                  <tr key={i} className={`group transition-colors ${b.isOut ? 'opacity-60' : 'hover:bg-white/5'}`}>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <span className={`font-display font-bold text-sm ${b.isOut ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                          {b.name}
-                        </span>
-                        {(isStriker || isNonStriker) && (
-                          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-[10px] text-emerald-500 font-black italic">
-                            <Activity className="w-3 h-3" /> {isStriker ? "STRIKER" : "NON-STRIKER"}
+                  <tr key={i} className={`group transition-colors ${b.isOut ? 'bg-muted/5' : 'hover:bg-muted/20'}`}>
+                    <td className="px-6 py-3">
+                      <div className="flex flex-col">
+                        <div className="flex items-center gap-2">
+                          <span className={`font-bold text-sm ${b.isOut ? 'text-muted-foreground' : 'text-primary'}`}>
+                            {b.name}
+                            {isStriker && <span className="ml-1 text-primary">*</span>}
                           </span>
-                        )}
+                          {(isStriker || isNonStriker) && (
+                            <span className="text-[9px] font-black text-emerald-500 uppercase tracking-tighter">
+                              {isStriker ? "Batting" : ""}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground font-medium">
+                          {b.isOut ? "out" : "not out"}
+                        </p>
                       </div>
-                      <p className="text-[10px] text-muted-foreground font-medium mt-0.5">
-                        {b.isOut ? "OUT" : "NOT OUT"}
-                      </p>
                     </td>
-                    <td className="px-4 py-4 text-right font-display font-black text-base">{b.runs}</td>
-                    <td className="px-4 py-4 text-right text-sm text-muted-foreground">{b.balls}</td>
-                    <td className="px-4 py-4 text-right text-sm text-muted-foreground">{b.fours || 0}</td>
-                    <td className="px-4 py-4 text-right text-sm text-muted-foreground">{b.sixes || 0}</td>
-                    <td className="px-6 py-4 text-right font-mono text-xs text-primary/80">
+                    <td className="px-4 py-3 text-right font-bold text-foreground">{b.runs}</td>
+                    <td className="px-4 py-3 text-right text-sm text-muted-foreground">{b.balls}</td>
+                    <td className="px-4 py-3 text-right text-sm text-muted-foreground">{b.fours || 0}</td>
+                    <td className="px-4 py-3 text-right text-sm text-muted-foreground">{b.sixes || 0}</td>
+                    <td className="px-6 py-3 text-right font-mono text-xs text-muted-foreground">
                       {b.balls > 0 ? ((b.runs / b.balls) * 100).toFixed(1) : "0.0"}
                     </td>
                   </tr>
@@ -212,7 +215,6 @@ export function ScoreboardTable({ matchId, data }: ScoreboardTableProps) {
           </table>
         </div>
 
-        {/* Bowlers Section */}
         <div className="mt-8">
           <div className="bg-orange-500/10 px-6 py-3 flex items-center justify-between border-y border-orange-500/20">
              <div className="flex items-center gap-2">
@@ -220,36 +222,38 @@ export function ScoreboardTable({ matchId, data }: ScoreboardTableProps) {
                 <h4 className="font-display font-black text-sm uppercase tracking-wider text-orange-400">Bowling Attack</h4>
              </div>
           </div>
-          <table className="w-full text-left">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left min-w-[500px] md:min-w-0">
              <thead>
-               <tr className="bg-muted/30 text-[10px] uppercase font-black tracking-widest text-muted-foreground">
-                 <th className="px-6 py-3">Bowler</th>
-                 <th className="px-4 py-3 text-right">O</th>
-                 <th className="px-4 py-3 text-right">M</th>
-                 <th className="px-4 py-3 text-right">R</th>
-                 <th className="px-4 py-3 text-right">W</th>
-                 <th className="px-6 py-3 text-right">ECO</th>
-               </tr>
-             </thead>
-             <tbody className="divide-y divide-white/5">
-               {bowlers && bowlers.length > 0 ? bowlers.map((b: any, i: number) => (
-                 <tr key={i} className="hover:bg-white/5 transition-colors">
-                   <td className="px-6 py-4 font-display font-bold text-sm">{b.name}</td>
-                   <td className="px-4 py-4 text-right text-sm font-bold">{formatOvers(b.balls)}</td>
-                   <td className="px-4 py-4 text-right text-sm text-muted-foreground">{b.maidens || 0}</td>
-                   <td className="px-4 py-4 text-right text-sm text-muted-foreground">{b.runs}</td>
-                   <td className="px-4 py-4 text-right font-display font-black text-base text-orange-400">{b.wickets}</td>
-                   <td className="px-6 py-4 text-right font-mono text-xs text-orange-400/80">
-                      {b.balls > 0 ? ((b.runs / (b.balls / 6))).toFixed(1) : "0.0"}
-                   </td>
-                 </tr>
-               )) : (
-                 <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground italic text-sm">Waiting for bowlers to start...</td>
-                 </tr>
-               )}
-             </tbody>
-          </table>
+              <tr className="bg-muted/50 text-[10px] uppercase font-black tracking-widest text-muted-foreground border-y border-border">
+                <th className="px-6 py-3">Bowler</th>
+                <th className="px-4 py-3 text-right">O</th>
+                <th className="px-4 py-3 text-right">M</th>
+                <th className="px-4 py-3 text-right">R</th>
+                <th className="px-4 py-3 text-right">W</th>
+                <th className="px-6 py-3 text-right">ECO</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {bowlers && bowlers.length > 0 ? bowlers.map((b: any, i: number) => (
+                <tr key={i} className="hover:bg-muted/20 transition-colors">
+                  <td className="px-6 py-3 font-bold text-sm text-foreground">{b.name}</td>
+                  <td className="px-4 py-3 text-right text-sm font-bold text-foreground">{formatOvers(b.balls)}</td>
+                  <td className="px-4 py-3 text-right text-sm text-muted-foreground">{b.maidens || 0}</td>
+                  <td className="px-4 py-3 text-right text-sm text-muted-foreground">{b.runs}</td>
+                  <td className="px-4 py-3 text-right font-bold text-sm text-primary">{b.wickets}</td>
+                  <td className="px-6 py-3 text-right font-mono text-xs text-muted-foreground">
+                    {b.balls > 0 ? ((b.runs / (b.balls / 6))).toFixed(1) : "0.0"}
+                  </td>
+                </tr>
+              )) : (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground italic text-sm">Waiting for bowlers to start...</td>
+                </tr>
+              )}
+            </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

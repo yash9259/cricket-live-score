@@ -40,36 +40,38 @@ export default function HomePage() {
         />
         <div className="absolute inset-0 bg-background/60" />
         <div className="absolute inset-0 bg-gradient-to-br from-background/85 via-background/55 to-neon-orange/20" />
-        <div className="container mx-auto px-4 py-20 md:py-32 relative">
+        <div className="container mx-auto px-4 py-12 md:py-32 relative">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
-            className="max-w-3xl"
+            className="max-w-3xl text-center md:text-left"
           >
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-sm text-primary mb-6">
-              <Zap className="h-4 w-4" />
-              {liveScore
-                ? (liveScore.inning === 2 && liveScore.firstInningScore
-                    ? `${liveScore.bowlingTeam} ${liveScore.firstInningScore.runs}/${liveScore.firstInningScore.wickets} | ${liveScore.battingTeam} ${liveScore.runs}/${liveScore.wickets}`
-                    : `${liveScore.battingTeam} ${liveScore.runs}/${liveScore.wickets} (${liveScore.overs}.${liveScore.balls})`)
-                : "VAGAD RAGHUVANSHI PARIVAR 2026"}
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-4 py-1.5 text-[10px] md:text-sm text-primary mb-6 max-w-full">
+              <Zap className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
+              <span className="truncate">
+                {liveScore
+                  ? (liveScore.inning === 2 && liveScore.firstInningScore
+                      ? `${liveScore.bowlingTeam} ${liveScore.firstInningScore.runs}/${liveScore.firstInningScore.wickets} | ${liveScore.battingTeam} ${liveScore.runs}/${liveScore.wickets}`
+                      : `${liveScore.battingTeam} ${liveScore.runs}/${liveScore.wickets} (${liveScore.overs}.${liveScore.balls})`)
+                  : "VAGAD RAGHUVANSHI PARIVAR 2026"}
+              </span>
             </div>
-            <h1 className="font-display text-5xl md:text-7xl font-bold leading-tight text-foreground">
-              VAGAD RAGHUVANSHI PARIVAR - BHUJ <br />
+            <h1 className="font-display text-3xl sm:text-5xl md:text-7xl font-bold leading-tight text-foreground">
+              VAGAD RAGHUVANSHI <br className="hidden sm:block" /> PARIVAR - BHUJ <br />
               <span className="text-primary neon-text-green">BOX CRICKET</span>
             </h1>
-            <p className="mt-6 text-lg text-muted-foreground max-w-lg">
+            <p className="mt-6 text-base md:text-lg text-muted-foreground max-w-lg mx-auto md:mx-0">
               Experience thrilling box cricket action. Follow live scores, and compete for glory!
             </p>
-            <div className="flex flex-wrap gap-4 mt-8">
-              <Link to="/register">
-                <Button size="lg" className="font-display text-lg px-8 bg-primary text-primary-foreground hover:bg-primary/90">
+            <div className="flex flex-col sm:flex-row items-center justify-center md:justify-start gap-4 mt-8">
+              <Link to="/register" className="w-full sm:w-auto">
+                <Button size="lg" className="w-full font-display text-lg px-8 bg-primary text-primary-foreground hover:bg-primary/90">
                   Register Team
                 </Button>
               </Link>
-              <Link to="/matches">
-                <Button size="lg" variant="outline" className="font-display text-lg px-8 border-primary/30 text-primary hover:bg-primary/10">
+              <Link to="/matches" className="w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="w-full font-display text-lg px-8 border-primary/30 text-primary hover:bg-primary/10">
                   View Matches <ChevronRight className="ml-1 h-5 w-5" />
                 </Button>
               </Link>

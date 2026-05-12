@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { api } from "../convex/_generated/api";
 import Navbar from "@/components/Navbar";
+import BottomNavbar from "@/components/BottomNavbar";
 
 // Lazy load pages
 const HomePage = lazy(() => import("@/pages/HomePage"));
@@ -40,7 +41,12 @@ function AppContent() {
   return (
     <>
       {/* Show Navbar only if not in display, admin, or scorer area */}
-      {!isDisplay && !isAdminArea && <Navbar registrationOnlyMode={registrationOnlyMode} />}
+      {!isDisplay && !isAdminArea && (
+        <>
+          <Navbar registrationOnlyMode={registrationOnlyMode} />
+          <BottomNavbar />
+        </>
+      )}
       <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
         <Routes>
           <Route path="/" element={<HomePage />} />

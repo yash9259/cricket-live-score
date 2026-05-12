@@ -45,16 +45,14 @@
     --sidebar-border: 220 15% 18%;
     --sidebar-ring: 199 87% 85%;
 
-    /* Custom tokens */
-    --neon-green: 199 87% 85%;
-    --neon-yellow: 45 100% 50%;
-    --neon-orange: 25 100% 50%;
-    --surface: 220 18% 12%;
-    --surface-hover: 220 18% 16%;
-    --glow-green: 0 0 20px hsl(199 87% 85% / 0.4);
-    --glow-yellow: 0 0 20px hsl(45 100% 50% / 0.4);
-    --glow-orange: 0 0 20px hsl(25 100% 50% / 0.4);
-    --ladies: 330 80% 65%;
+    /* custom Cricbuzz-style palette */
+    --cric-green: 165 100% 25%;
+    --cric-green-light: 165 100% 35%;
+    --cric-yellow: 48 100% 50%;
+    --cric-red: 354 70% 50%;
+    
+    --primary: 165 100% 30%; /* Set primary to Cricbuzz green */
+    --primary-foreground: 0 0% 100%;
   }
 }
 
